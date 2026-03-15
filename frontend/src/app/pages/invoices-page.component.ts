@@ -44,7 +44,7 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
             <p>OC: {{ item.purchaseOrder }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
             <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
             <div class="actions">
-              <button mat-stroked-button *ngIf="auth.hasAnyRole(['Gestor', 'Admin']) && item.status !== 'MANAGED'" (click)="manage(item)">Marcar gestión</button>
+              <button mat-stroked-button *ngIf="auth.hasAnyRole(['Gestor', 'Admin']) && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
               <input type="file" (change)="upload(item.id, $event)" />
             </div>
             <small *ngIf="item.attachments.length">Adjuntos: {{ item.attachments.length }}</small>

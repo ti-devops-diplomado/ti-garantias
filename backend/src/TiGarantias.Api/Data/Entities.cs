@@ -81,7 +81,7 @@ public sealed class Invoice
     public DateOnly? RefundManagedDate { get; set; }
     public Guid? RefundManagerUserId { get; set; }
     public User? RefundManagerUser { get; set; }
-    public InvoiceStatus Status { get; set; } = InvoiceStatus.Open;
+    public InvoiceStatus Status { get; set; } = InvoiceStatus.Abierta;
     public Guid CreatedByUserId { get; set; }
     public User CreatedByUser { get; set; } = null!;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

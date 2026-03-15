@@ -120,11 +120,11 @@ public sealed class InvoiceStatusService : IInvoiceStatusService
 {
     public InvoiceStatus CalculateStatus(Invoice invoice, DateOnly today, int dueSoonThresholdDays)
     {
-        if (invoice.Status == InvoiceStatus.Cancelled) return InvoiceStatus.Cancelled;
-        if (invoice.RefundManagedDate.HasValue) return InvoiceStatus.Managed;
-        if (!invoice.GuaranteeRefundable || !invoice.EstimatedRefundDate.HasValue) return InvoiceStatus.Open;
-        if (invoice.EstimatedRefundDate.Value < today) return InvoiceStatus.Overdue;
-        return invoice.EstimatedRefundDate.Value <= today.AddDays(dueSoonThresholdDays) ? InvoiceStatus.DueSoon : InvoiceStatus.Open;
+        if (invoice.Status == InvoiceStatus.Cancelada) return InvoiceStatus.Cancelada;
+        if (invoice.RefundManagedDate.HasValue) return InvoiceStatus.Gestionada;
+        if (!invoice.GuaranteeRefundable || !invoice.EstimatedRefundDate.HasValue) return InvoiceStatus.Abierta;
+        if (invoice.EstimatedRefundDate.Value < today) return InvoiceStatus.Vencida;
+        return invoice.EstimatedRefundDate.Value <= today.AddDays(dueSoonThresholdDays) ? InvoiceStatus.Por_Vencer : InvoiceStatus.Abierta;
     }
 }
 
@@ -178,7 +178,7 @@ public sealed class NotificationJobService(
         }
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        foreach (var invoice in invoices.Where(x => x.Status is InvoiceStatus.DueSoon or InvoiceStatus.Overdue && x.EstimatedRefundDate.HasValue))
+        foreach (var invoice in invoices.Where(x => x.Status is InvoiceStatus.Por_Vencer or InvoiceStatus.Vencida && x.EstimatedRefundDate.HasValue))
         {
             var recipients = new[] { invoice.CreatedByUser.Email, invoice.RefundManagerUser?.Email }
                 .Where(x => !string.IsNullOrWhiteSpace(x))
