@@ -38,7 +38,7 @@ public sealed class InvoicesController(
         if (scope == "managed" && currentUserService.UserId.HasValue)
         {
             query = query.Where(x => x.RefundManagerUserId == currentUserService.UserId.Value
-                && (x.Status == InvoiceStatus.DueSoon || x.Status == InvoiceStatus.Overdue));
+                && (x.Status == InvoiceStatus.Por_Vencer || x.Status == InvoiceStatus.Vencida));
         }
 
         var invoices = await query.OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
@@ -132,7 +132,7 @@ public sealed class InvoicesController(
 
         invoice.RefundManagedDate = request.RefundManagedDate;
         invoice.RefundManagerUserId = currentUserService.UserId;
-        invoice.Status = InvoiceStatus.Managed;
+        invoice.Status = InvoiceStatus.Gestionada;
         invoice.UpdatedAt = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);

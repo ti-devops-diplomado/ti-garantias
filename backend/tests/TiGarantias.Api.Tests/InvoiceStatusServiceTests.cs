@@ -9,7 +9,7 @@ public sealed class InvoiceStatusServiceTests
     private readonly InvoiceStatusService _service = new();
 
     [Fact]
-    public void DebeMarcarComoManagedCuandoExisteFechaDeGestion()
+    public void DebeMarcarComoGestionadaCuandoExisteFechaDeGestion()
     {
         var invoice = new Invoice
         {
@@ -20,11 +20,11 @@ public sealed class InvoiceStatusServiceTests
 
         var result = _service.CalculateStatus(invoice, new DateOnly(2026, 3, 15), 15);
 
-        Assert.Equal(InvoiceStatus.Managed, result);
+        Assert.Equal(InvoiceStatus.Gestionada, result);
     }
 
     [Fact]
-    public void DebeMarcarComoDueSoonCuandoEstaDentroDelUmbral()
+    public void DebeMarcarComoPorVencerCuandoEstaDentroDelUmbral()
     {
         var invoice = new Invoice
         {
@@ -34,6 +34,6 @@ public sealed class InvoiceStatusServiceTests
 
         var result = _service.CalculateStatus(invoice, new DateOnly(2026, 3, 15), 15);
 
-        Assert.Equal(InvoiceStatus.DueSoon, result);
+        Assert.Equal(InvoiceStatus.Por_Vencer, result);
     }
 }
