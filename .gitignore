@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependency directories
+node_modules/
+
+# Build outputs
+bin/
+obj/
+dist/
+coverage/
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
