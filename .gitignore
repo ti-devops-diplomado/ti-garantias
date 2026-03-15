@@ -23,3 +23,7 @@ coverage/
 .terraform/
 terraform.tfstate
 terraform.tfstate.*
+.angular/
+frontend/dist/
+frontend/node_modules/
+deploy/env/dev.env

@@ -1,0 +1,8 @@
+apiVersion: 1
+
+providers:
+  - name: ti-garantias
+    folder: TI Garantias
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
