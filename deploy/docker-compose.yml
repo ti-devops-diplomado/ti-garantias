@@ -1,1 +1,96 @@
-services: {}
+services:
+  db:
+    image: postgres:16.4
+    container_name: ti-garantias-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ti_garantias_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ti_garantias_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ${BACKEND_IMAGE:-ti-garantias/backend}:${BACKEND_TAG:-v0.1.0-b538348}
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ti-garantias-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      CONNECTION_STRING: Host=db;Port=5432;Database=${POSTGRES_DB:-ti_garantias_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Jwt__Secret: ${JWT_SECRET:-CambiarEstaClaveTemporal1234567890}
+      Jwt__Issuer: ti-garantias
+      Jwt__Audience: ti-garantias-clients
+      Storage__AttachmentsPath: ${ATTACHMENTS_PATH:-/data/attachments}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-25}
+      Smtp__User: ${SMTP_USER:-}
+      Smtp__Password: ${SMTP_PASS:-}
+      Smtp__From: ${SMTP_FROM:-no-reply@demo.local}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - attachments_data:${ATTACHMENTS_PATH:-/data/attachments}
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ti-garantias/frontend}:${FRONTEND_TAG:-v0.1.0-b538348}
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: ti-garantias-frontend
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: ti-garantias-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: ti-garantias-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+
+  jenkins:
+    image: jenkins/jenkins:2.462.3-lts-jdk17
+    container_name: ti-garantias-jenkins
+    profiles: ["ci"]
+    ports:
+      - "${JENKINS_PORT:-8081}:8080"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+
+volumes:
+  db_data:
+  attachments_data:
+  grafana_data:
+  jenkins_data:
