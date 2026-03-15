@@ -11,6 +11,7 @@ jobs:
   backend:
     name: Backend (.NET 8) - build & test
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('backend/*.sln', 'backend/*.slnx', 'backend/**/*.csproj') != '' }}
 
     steps:
       - name: Checkout
@@ -23,20 +24,30 @@ jobs:
           cache: true
 
       - name: Restore
-        run: dotnet restore ./TiGarantias.slnx
+        run: |
+          if [ -f "TiGarantias.slnx" ]; then dotnet restore ./TiGarantias.slnx; \
+          elif ls *.sln >/dev/null 2>&1; then dotnet restore ./*.sln; \
+          else dotnet restore; fi
         working-directory: backend
 
       - name: Build
-        run: dotnet build ./TiGarantias.slnx --configuration Release --no-restore
+        run: |
+          if [ -f "TiGarantias.slnx" ]; then dotnet build ./TiGarantias.slnx -c Release --no-restore; \
+          elif ls *.sln >/dev/null 2>&1; then dotnet build ./*.sln -c Release --no-restore; \
+          else dotnet build -c Release --no-restore; fi
         working-directory: backend
 
       - name: Test
-        run: dotnet test ./TiGarantias.slnx --configuration Release --no-build --verbosity normal
+        run: |
+          if [ -f "TiGarantias.slnx" ]; then dotnet test ./TiGarantias.slnx -c Release --no-build; \
+          elif ls *.sln >/dev/null 2>&1; then dotnet test ./*.sln -c Release --no-build; \
+          else dotnet test -c Release --no-build; fi
         working-directory: backend
 
   frontend:
     name: Frontend (Angular) - build
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('frontend/package.json') != '' }}
 
     steps:
       - name: Checkout
