@@ -24,6 +24,9 @@ export interface ContractItem {
   supplierId: string;
   contractNumber: string;
   title: string;
+  startDate: string;
+  endDate?: string | null;
+  retentionPercentage: number;
 }
 
 export interface Deliverable {

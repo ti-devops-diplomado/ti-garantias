@@ -38,6 +38,10 @@ export class ApiService {
     return this.http.post<ContractItem>(`${this.auth.apiBaseUrl}/api/contracts`, payload);
   }
 
+  updateContract(id: string, payload: unknown) {
+    return this.http.put<ContractItem>(`${this.auth.apiBaseUrl}/api/contracts/${id}`, payload);
+  }
+
   getDeliverables() {
     return this.http.get<Deliverable[]>(`${this.auth.apiBaseUrl}/api/deliverables`);
   }
