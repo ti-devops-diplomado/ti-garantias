@@ -100,9 +100,10 @@ public sealed class ContractsController(AppDbContext dbContext, IAuditService au
     [HttpPost]
     public async Task<ActionResult<Contract>> Create([FromBody] ContractRequest request, CancellationToken cancellationToken)
     {
-        if (!await dbContext.Suppliers.AnyAsync(x => x.Id == request.SupplierId, cancellationToken))
+        var validationError = await ValidateContractRequestAsync(request, null, cancellationToken);
+        if (validationError is not null)
         {
-            return ValidationProblem("El proveedor no existe.");
+            return ValidationProblem(validationError);
         }
 
         var contract = new Contract
@@ -119,6 +120,66 @@ public sealed class ContractsController(AppDbContext dbContext, IAuditService au
         await dbContext.SaveChangesAsync(cancellationToken);
         await auditService.RecordAsync("contract", contract.Id.ToString(), "create", request, cancellationToken);
         return CreatedAtAction(nameof(GetAll), new { id = contract.Id }, contract);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Contract>> Update(Guid id, [FromBody] ContractRequest request, CancellationToken cancellationToken)
+    {
+        var contract = await dbContext.Contracts.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (contract is null)
+        {
+            return NotFound();
+        }
+
+        var validationError = await ValidateContractRequestAsync(request, contract, cancellationToken);
+        if (validationError is not null)
+        {
+            return ValidationProblem(validationError);
+        }
+
+        contract.SupplierId = request.SupplierId;
+        contract.ContractNumber = request.ContractNumber.Trim();
+        contract.Title = request.Title.Trim();
+        contract.StartDate = request.StartDate;
+        contract.EndDate = request.EndDate;
+        contract.RetentionPercentage = request.RetentionPercentage;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.RecordAsync("contract", contract.Id.ToString(), "update", request, cancellationToken);
+        return Ok(contract);
+    }
+
+    private async Task<string?> ValidateContractRequestAsync(ContractRequest request, Contract? currentContract, CancellationToken cancellationToken)
+    {
+        if (!await dbContext.Suppliers.AnyAsync(x => x.Id == request.SupplierId, cancellationToken))
+        {
+            return "El proveedor no existe.";
+        }
+
+        if (request.EndDate.HasValue && request.EndDate.Value < request.StartDate)
+        {
+            return "La fecha de finalizacion no puede ser menor a la fecha de inicio.";
+        }
+
+        var normalizedContractNumber = request.ContractNumber.Trim();
+        var currentContractId = currentContract?.Id;
+        var contractNumberExists = await dbContext.Contracts.AnyAsync(
+            x => x.Id != currentContractId && x.ContractNumber == normalizedContractNumber,
+            cancellationToken);
+
+        if (contractNumberExists)
+        {
+            return "Ya existe un contrato con el mismo numero.";
+        }
+
+        if (currentContract is not null
+            && currentContract.SupplierId != request.SupplierId
+            && await dbContext.Invoices.AnyAsync(x => x.ContractId == currentContract.Id, cancellationToken))
+        {
+            return "No se puede cambiar el proveedor de un contrato que ya tiene facturas asociadas.";
+        }
+
+        return null;
     }
 }
 

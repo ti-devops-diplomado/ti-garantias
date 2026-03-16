@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using TiGarantias.Api.Domain.Enums;
 
 namespace TiGarantias.Api.Data;
@@ -6,6 +7,7 @@ public sealed class Role
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
+    [JsonIgnore]
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }
 
@@ -17,6 +19,7 @@ public sealed class User
     public string PasswordHash { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [JsonIgnore]
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }
 
@@ -35,6 +38,7 @@ public sealed class Supplier
     public string TaxId { get; set; } = string.Empty;
     public string ContactEmail { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [JsonIgnore]
     public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
 }
 
@@ -48,7 +52,9 @@ public sealed class Contract
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public decimal RetentionPercentage { get; set; }
+    [JsonIgnore]
     public ICollection<Deliverable> Deliverables { get; set; } = new List<Deliverable>();
+    [JsonIgnore]
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }
 
@@ -60,6 +66,7 @@ public sealed class Deliverable
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public DateOnly? DueDate { get; set; }
+    [JsonIgnore]
     public ICollection<InvoiceDeliverable> InvoiceDeliverables { get; set; } = new List<InvoiceDeliverable>();
 }
 
@@ -86,7 +93,9 @@ public sealed class Invoice
     public User CreatedByUser { get; set; } = null!;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [JsonIgnore]
     public ICollection<InvoiceDeliverable> InvoiceDeliverables { get; set; } = new List<InvoiceDeliverable>();
+    [JsonIgnore]
     public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
 }
 

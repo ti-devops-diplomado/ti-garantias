@@ -40,9 +40,20 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
           <mat-form-field appearance="outline"><mat-label>Proveedor</mat-label><mat-select formControlName="supplierId"><mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option></mat-select></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Número contrato</mat-label><input matInput formControlName="contractNumber" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Título</mat-label><input matInput formControlName="title" /></mat-form-field>
-          <button mat-flat-button color="primary" type="submit">Guardar contrato</button>
+          <mat-form-field appearance="outline"><mat-label>Fecha inicio</mat-label><input matInput type="date" formControlName="startDate" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Fecha fin</mat-label><input matInput type="date" formControlName="endDate" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>% retención</mat-label><input matInput type="number" min="0" step="0.01" formControlName="retentionPercentage" /></mat-form-field>
+          <div class="actions">
+            <button mat-flat-button color="primary" type="submit">{{ editingContractId() ? 'Actualizar contrato' : 'Guardar contrato' }}</button>
+            <button *ngIf="editingContractId()" mat-stroked-button type="button" (click)="cancelContractEdit()">Cancelar</button>
+          </div>
         </form>
-        <ul><li *ngFor="let item of contracts()">{{ item.contractNumber }} - {{ item.title }}</li></ul>
+        <ul class="item-list">
+          <li *ngFor="let item of contracts()">
+            <span>{{ item.contractNumber }} - {{ item.title }} / {{ getSupplierName(item.supplierId) }}</span>
+            <button mat-button type="button" (click)="editContract(item)">Editar</button>
+          </li>
+        </ul>
       </mat-card>
 
       <mat-card>
@@ -74,6 +85,7 @@ export class MasterDataPageComponent {
   readonly contracts = signal<ContractItem[]>([]);
   readonly deliverables = signal<Deliverable[]>([]);
   readonly editingSupplierId = signal<string | null>(null);
+  readonly editingContractId = signal<string | null>(null);
 
   readonly supplierForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -84,7 +96,10 @@ export class MasterDataPageComponent {
   readonly contractForm = this.fb.nonNullable.group({
     supplierId: ['', Validators.required],
     contractNumber: ['', Validators.required],
-    title: ['', Validators.required]
+    title: ['', Validators.required],
+    startDate: [new Date().toISOString().slice(0, 10), Validators.required],
+    endDate: [''],
+    retentionPercentage: [10, Validators.required]
   });
 
   readonly deliverableForm = this.fb.nonNullable.group({
@@ -127,10 +142,33 @@ export class MasterDataPageComponent {
 
   saveContract() {
     if (this.contractForm.invalid) return;
-    this.api.createContract({ ...this.contractForm.getRawValue(), startDate: new Date().toISOString().slice(0, 10), retentionPercentage: 10 }).subscribe(() => {
-      this.contractForm.reset({ supplierId: '', contractNumber: '', title: '' });
+    const request = this.contractForm.getRawValue();
+    const contractId = this.editingContractId();
+
+    const action = contractId
+      ? this.api.updateContract(contractId, request)
+      : this.api.createContract(request);
+
+    action.subscribe(() => {
+      this.resetContractForm();
       this.reload();
     });
+  }
+
+  editContract(contract: ContractItem) {
+    this.editingContractId.set(contract.id);
+    this.contractForm.reset({
+      supplierId: contract.supplierId,
+      contractNumber: contract.contractNumber,
+      title: contract.title,
+      startDate: contract.startDate,
+      endDate: contract.endDate ?? '',
+      retentionPercentage: contract.retentionPercentage
+    });
+  }
+
+  cancelContractEdit() {
+    this.resetContractForm();
   }
 
   saveDeliverable() {
@@ -150,5 +188,21 @@ export class MasterDataPageComponent {
   private resetSupplierForm() {
     this.editingSupplierId.set(null);
     this.supplierForm.reset({ name: '', taxId: '', contactEmail: '' });
+  }
+
+  private resetContractForm() {
+    this.editingContractId.set(null);
+    this.contractForm.reset({
+      supplierId: '',
+      contractNumber: '',
+      title: '',
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: '',
+      retentionPercentage: 10
+    });
+  }
+
+  getSupplierName(supplierId: string) {
+    return this.suppliers().find(item => item.id === supplierId)?.name ?? 'Proveedor no encontrado';
   }
 }
