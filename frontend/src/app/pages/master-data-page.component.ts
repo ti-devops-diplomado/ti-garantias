@@ -21,9 +21,17 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
           <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="name" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>NIT / ID</mat-label><input matInput formControlName="taxId" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Correo</mat-label><input matInput formControlName="contactEmail" /></mat-form-field>
-          <button mat-flat-button color="primary" type="submit">Guardar proveedor</button>
+          <div class="actions">
+            <button mat-flat-button color="primary" type="submit">{{ editingSupplierId() ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
+            <button *ngIf="editingSupplierId()" mat-stroked-button type="button" (click)="cancelSupplierEdit()">Cancelar</button>
+          </div>
         </form>
-        <ul><li *ngFor="let item of suppliers()">{{ item.name }} - {{ item.taxId }}</li></ul>
+        <ul class="item-list">
+          <li *ngFor="let item of suppliers()">
+            <span>{{ item.name }} - {{ item.taxId }}</span>
+            <button mat-button type="button" (click)="editSupplier(item)">Editar</button>
+          </li>
+        </ul>
       </mat-card>
 
       <mat-card>
@@ -53,6 +61,9 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
     .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     form { display: grid; gap: 12px; margin-bottom: 16px; }
     ul { padding-left: 18px; margin: 0; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .item-list { list-style: none; padding-left: 0; }
+    .item-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
   `]
 })
 export class MasterDataPageComponent {
@@ -62,6 +73,7 @@ export class MasterDataPageComponent {
   readonly suppliers = signal<Supplier[]>([]);
   readonly contracts = signal<ContractItem[]>([]);
   readonly deliverables = signal<Deliverable[]>([]);
+  readonly editingSupplierId = signal<string | null>(null);
 
   readonly supplierForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -87,10 +99,30 @@ export class MasterDataPageComponent {
 
   saveSupplier() {
     if (this.supplierForm.invalid) return;
-    this.api.createSupplier(this.supplierForm.getRawValue()).subscribe(() => {
-      this.supplierForm.reset({ name: '', taxId: '', contactEmail: '' });
+    const request = this.supplierForm.getRawValue();
+    const supplierId = this.editingSupplierId();
+
+    const action = supplierId
+      ? this.api.updateSupplier(supplierId, request)
+      : this.api.createSupplier(request);
+
+    action.subscribe(() => {
+      this.resetSupplierForm();
       this.reload();
     });
+  }
+
+  editSupplier(supplier: Supplier) {
+    this.editingSupplierId.set(supplier.id);
+    this.supplierForm.reset({
+      name: supplier.name,
+      taxId: supplier.taxId,
+      contactEmail: supplier.contactEmail
+    });
+  }
+
+  cancelSupplierEdit() {
+    this.resetSupplierForm();
   }
 
   saveContract() {
@@ -113,5 +145,10 @@ export class MasterDataPageComponent {
     this.api.getSuppliers().subscribe(data => this.suppliers.set(data));
     this.api.getContracts().subscribe(data => this.contracts.set(data));
     this.api.getDeliverables().subscribe(data => this.deliverables.set(data));
+  }
+
+  private resetSupplierForm() {
+    this.editingSupplierId.set(null);
+    this.supplierForm.reset({ name: '', taxId: '', contactEmail: '' });
   }
 }
