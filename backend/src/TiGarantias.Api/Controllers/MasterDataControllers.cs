@@ -19,11 +19,72 @@ public sealed class SuppliersController(AppDbContext dbContext, IAuditService au
     [HttpPost]
     public async Task<ActionResult<Supplier>> Create([FromBody] SupplierRequest request, CancellationToken cancellationToken)
     {
+        var validationError = await ValidateSupplierUniquenessAsync(request, null, cancellationToken);
+        if (validationError is not null)
+        {
+            return ValidationProblem(validationError);
+        }
+
         var supplier = new Supplier { Name = request.Name.Trim(), TaxId = request.TaxId.Trim(), ContactEmail = request.ContactEmail.Trim() };
         dbContext.Suppliers.Add(supplier);
         await dbContext.SaveChangesAsync(cancellationToken);
         await auditService.RecordAsync("supplier", supplier.Id.ToString(), "create", request, cancellationToken);
         return CreatedAtAction(nameof(GetAll), new { id = supplier.Id }, supplier);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Supplier>> Update(Guid id, [FromBody] SupplierRequest request, CancellationToken cancellationToken)
+    {
+        var supplier = await dbContext.Suppliers.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (supplier is null)
+        {
+            return NotFound();
+        }
+
+        var validationError = await ValidateSupplierUniquenessAsync(request, id, cancellationToken);
+        if (validationError is not null)
+        {
+            return ValidationProblem(validationError);
+        }
+
+        supplier.Name = request.Name.Trim();
+        supplier.TaxId = request.TaxId.Trim();
+        supplier.ContactEmail = request.ContactEmail.Trim();
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.RecordAsync("supplier", supplier.Id.ToString(), "update", request, cancellationToken);
+        return Ok(supplier);
+    }
+
+    private async Task<string?> ValidateSupplierUniquenessAsync(SupplierRequest request, Guid? currentSupplierId, CancellationToken cancellationToken)
+    {
+        var normalizedTaxId = request.TaxId.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedTaxId))
+        {
+            var taxIdExists = await dbContext.Suppliers.AnyAsync(
+                x => x.Id != currentSupplierId && x.TaxId == normalizedTaxId,
+                cancellationToken);
+
+            if (taxIdExists)
+            {
+                return "Ya existe un proveedor con el mismo NIT / ID.";
+            }
+        }
+
+        var normalizedEmail = request.ContactEmail.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            var emailExists = await dbContext.Suppliers.AnyAsync(
+                x => x.Id != currentSupplierId && x.ContactEmail.ToLower() == normalizedEmail.ToLower(),
+                cancellationToken);
+
+            if (emailExists)
+            {
+                return "Ya existe un proveedor con el mismo correo de contacto.";
+            }
+        }
+
+        return null;
     }
 }
 

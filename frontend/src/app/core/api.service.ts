@@ -26,6 +26,10 @@ export class ApiService {
     return this.http.post<Supplier>(`${this.auth.apiBaseUrl}/api/suppliers`, payload);
   }
 
+  updateSupplier(id: string, payload: unknown) {
+    return this.http.put<Supplier>(`${this.auth.apiBaseUrl}/api/suppliers/${id}`, payload);
+  }
+
   getContracts() {
     return this.http.get<ContractItem[]>(`${this.auth.apiBaseUrl}/api/contracts`);
   }
