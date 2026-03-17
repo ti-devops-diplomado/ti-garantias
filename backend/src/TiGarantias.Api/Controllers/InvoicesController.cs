@@ -180,11 +180,27 @@ public sealed class InvoicesController(
     [HttpGet("attachments/{attachmentId:guid}")]
     public async Task<IActionResult> DownloadAttachment(Guid attachmentId, CancellationToken cancellationToken)
     {
-        var attachment = await dbContext.Attachments.SingleOrDefaultAsync(x => x.Id == attachmentId, cancellationToken);
+        var attachment = await dbContext.Attachments
+            .Include(x => x.Invoice)
+            .SingleOrDefaultAsync(x => x.Id == attachmentId, cancellationToken);
         if (attachment is null) return NotFound();
+        if (!CanAccessAttachment(attachment)) return Forbid();
 
         var file = await attachmentStorageService.OpenReadAsync(attachment, cancellationToken);
         return File(file.stream, file.contentType, file.fileName);
+    }
+
+    [HttpGet("attachments/{attachmentId:guid}/preview")]
+    public async Task<IActionResult> PreviewAttachment(Guid attachmentId, CancellationToken cancellationToken)
+    {
+        var attachment = await dbContext.Attachments
+            .Include(x => x.Invoice)
+            .SingleOrDefaultAsync(x => x.Id == attachmentId, cancellationToken);
+        if (attachment is null) return NotFound();
+        if (!CanAccessAttachment(attachment)) return Forbid();
+
+        var file = await attachmentStorageService.OpenReadAsync(attachment, cancellationToken);
+        return File(file.stream, file.contentType, enableRangeProcessing: true);
     }
 
     private async Task<Invoice> LoadInvoiceAsync(Guid invoiceId, CancellationToken cancellationToken) =>
@@ -198,6 +214,18 @@ public sealed class InvoicesController(
             .SingleAsync(x => x.Id == invoiceId, cancellationToken);
 
     private static string NormalizeInvoiceNumber(string invoiceNumber) => invoiceNumber.Replace("-", string.Empty, StringComparison.Ordinal);
+
+    private bool CanAccessAttachment(Attachment attachment)
+    {
+        if (!currentUserService.UserId.HasValue)
+        {
+            return false;
+        }
+
+        return attachment.Invoice.CreatedByUserId == currentUserService.UserId.Value
+            || attachment.Invoice.RefundManagerUserId == currentUserService.UserId.Value
+            || currentUserService.Roles.Contains("Admin");
+    }
 
     private static InvoiceResponse MapInvoice(Invoice invoice) => new()
     {
