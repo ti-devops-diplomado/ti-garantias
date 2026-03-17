@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TiGarantias.Api.Contracts;
 using TiGarantias.Api.Data;
 using TiGarantias.Api.Services;
+using TiGarantias.Api.Utils;
 
 namespace TiGarantias.Api.Controllers;
 
@@ -20,10 +21,11 @@ public sealed class AuthController(
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
+        var normalizedEmail = EmailNormalizer.Normalize(request.Email);
         var user = await dbContext.Users
             .Include(x => x.UserRoles)
             .ThenInclude(x => x.Role)
-            .SingleOrDefaultAsync(x => x.Email == request.Email, cancellationToken);
+            .SingleOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail, cancellationToken);
 
         if (user is null || !user.IsActive)
         {
