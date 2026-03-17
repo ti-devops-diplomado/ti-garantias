@@ -61,7 +61,7 @@ export class LoginPageComponent {
     this.loading.set(true);
     this.error.set('');
     const { email, password } = this.form.getRawValue();
-    this.auth.login(email, password).subscribe({
+    this.auth.login(email.trim(), password).subscribe({
       next: () => void this.router.navigate(['/mis-registros']),
       error: () => this.error.set('No fue posible iniciar sesión.'),
       complete: () => this.loading.set(false)
