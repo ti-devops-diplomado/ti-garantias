@@ -25,17 +25,34 @@ import { UserSummary } from '../core/models';
         <mat-checkbox formControlName="isActive">Activo</mat-checkbox>
         <button mat-flat-button color="primary" type="submit">Guardar usuario</button>
       </form>
+      <p class="message" *ngIf="message()">{{ message() }}</p>
 
       <table>
-        <thead><tr><th>Nombre</th><th>Correo</th><th>Roles</th></tr></thead>
-        <tbody><tr *ngFor="let item of users()"><td>{{ item.fullName }}</td><td>{{ item.email }}</td><td>{{ item.roles.join(', ') }}</td></tr></tbody>
+        <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Roles</th><th>Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let item of users()">
+            <td>{{ item.fullName }}</td>
+            <td>{{ item.email }}</td>
+            <td>{{ item.isActive ? 'Activo' : 'Inactivo' }}</td>
+            <td>{{ item.roles.join(', ') }}</td>
+            <td class="actions">
+              <button mat-stroked-button type="button" (click)="toggleStatus(item)">
+                {{ item.isActive ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button mat-stroked-button type="button" (click)="resetPassword(item)">Resetear clave</button>
+            </td>
+          </tr>
+        </tbody>
       </table>
+      <p class="hint">El reseteo asigna la clave temporal <code>Temporal123!</code>.</p>
     </mat-card>
   `,
   styles: [`
     form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .message, .hint { margin-top: 12px; }
   `]
 })
 export class UsersPageComponent {
@@ -44,6 +61,7 @@ export class UsersPageComponent {
 
   readonly roles = ['Admin', 'Registrador', 'Gestor', 'Auditor'];
   readonly users = signal<UserSummary[]>([]);
+  readonly message = signal('');
   readonly form = this.fb.nonNullable.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
@@ -58,9 +76,37 @@ export class UsersPageComponent {
 
   save() {
     if (this.form.invalid) return;
+    this.message.set('');
     this.api.saveUser(this.form.getRawValue()).subscribe(() => {
       this.form.reset({ fullName: '', email: '', password: 'Temporal123!', roles: ['Registrador'], isActive: true });
+      this.message.set('Usuario creado correctamente.');
       this.reload();
+    });
+  }
+
+  toggleStatus(user: UserSummary) {
+    const nextStatus = !user.isActive;
+    const confirmed = window.confirm(`¿Seguro que deseas ${nextStatus ? 'activar' : 'desactivar'} a ${user.fullName}?`);
+    if (!confirmed) return;
+
+    this.message.set('');
+    this.api.updateUserStatus(user.id, nextStatus).subscribe({
+      next: () => {
+        this.message.set(`Usuario ${nextStatus ? 'activado' : 'desactivado'} correctamente.`);
+        this.reload();
+      },
+      error: () => this.message.set('No fue posible actualizar el estado del usuario.')
+    });
+  }
+
+  resetPassword(user: UserSummary) {
+    const confirmed = window.confirm(`¿Resetear la clave de ${user.fullName} a Temporal123!?`);
+    if (!confirmed) return;
+
+    this.message.set('');
+    this.api.resetUserPassword(user.id, 'Temporal123!').subscribe({
+      next: () => this.message.set(`Clave reseteada correctamente para ${user.email}.`),
+      error: () => this.message.set('No fue posible resetear la clave del usuario.')
     });
   }
 

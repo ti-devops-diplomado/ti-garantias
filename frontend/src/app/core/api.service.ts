@@ -18,6 +18,14 @@ export class ApiService {
       : this.http.post(`${this.auth.apiBaseUrl}/api/users`, payload);
   }
 
+  updateUserStatus(id: string, isActive: boolean) {
+    return this.http.patch<UserSummary>(`${this.auth.apiBaseUrl}/api/users/${id}/status`, { isActive });
+  }
+
+  resetUserPassword(id: string, newPassword: string) {
+    return this.http.post(`${this.auth.apiBaseUrl}/api/users/${id}/reset-password`, { newPassword });
+  }
+
   getSuppliers() {
     return this.http.get<Supplier[]>(`${this.auth.apiBaseUrl}/api/suppliers`);
   }
