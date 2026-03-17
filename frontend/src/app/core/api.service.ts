@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs';
 import { ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from './models';
 import { AuthService } from './auth.service';
 
@@ -77,5 +78,17 @@ export class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post(`${this.auth.apiBaseUrl}/api/invoices/${id}/attachments`, formData);
+  }
+
+  getAttachmentPreview(attachmentId: string) {
+    return this.http.get(`${this.auth.apiBaseUrl}/api/invoices/attachments/${attachmentId}/preview`, {
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => ({
+        blob: response.body!,
+        contentType: response.headers.get('content-type') ?? 'application/octet-stream'
+      }))
+    );
   }
 }
