@@ -21,7 +21,7 @@ ti-garantias/
 - Base de datos: PostgreSQL 16
 - Autenticación: JWT + RBAC con tablas `users`, `roles`, `user_roles`
 - Jobs: Hangfire
-- Monitoreo: Prometheus + Grafana
+- Monitoreo: Prometheus + Grafana + Loki
 - Contenedores: Docker Compose
 
 ## Convenciones importantes
@@ -70,7 +70,8 @@ docker compose --env-file deploy/env/dev.env -f deploy/docker-compose.yml down
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
 - Jenkins local opcional: `docker compose --profile ci ...` en http://localhost:8081
-
+- Loki : http://localhost:3100/ready (para verificar en la maquina local)
+         http://loki:3100 (para configurar enGrafana)
 ## Credenciales demo
 
 - Usuario admin: `admin@demo.local`
@@ -99,7 +100,7 @@ docker compose --env-file deploy/env/dev.env -f deploy/docker-compose.yml down
 ```powershell
 docker compose --env-file deploy/env/dev.env -f deploy/docker-compose.yml ps
 Invoke-WebRequest http://localhost:8080/health
-Invoke-WebRequest http://localhost:8080/metrics
+Invoke-WebRequest |http://localhost:8080/metrics
 ```
 
 Validación funcional sugerida:
