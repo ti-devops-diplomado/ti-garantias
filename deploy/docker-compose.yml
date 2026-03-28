@@ -79,6 +79,28 @@ services:
       - "${GRAFANA_PORT:-3000}:3000"
     depends_on:
       - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: ti-garantias-loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: ti-garantias-promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./monitoring/loki/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+    depends_on:
+      - loki
+
 
   jenkins:
     image: jenkins/jenkins:2.462.3-lts-jdk17
@@ -94,3 +116,4 @@ volumes:
   attachments_data:
   grafana_data:
   jenkins_data:
+  loki_data:
