@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs';
 import { ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from './models';
 import { AuthService } from './auth.service';
 
@@ -16,6 +17,14 @@ export class ApiService {
     return id
       ? this.http.put(`${this.auth.apiBaseUrl}/api/users/${id}`, payload)
       : this.http.post(`${this.auth.apiBaseUrl}/api/users`, payload);
+  }
+
+  updateUserStatus(id: string, isActive: boolean) {
+    return this.http.patch<UserSummary>(`${this.auth.apiBaseUrl}/api/users/${id}/status`, { isActive });
+  }
+
+  resetUserPassword(id: string, newPassword: string) {
+    return this.http.post(`${this.auth.apiBaseUrl}/api/users/${id}/reset-password`, { newPassword });
   }
 
   getSuppliers() {
@@ -69,5 +78,17 @@ export class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post(`${this.auth.apiBaseUrl}/api/invoices/${id}/attachments`, formData);
+  }
+
+  getAttachmentPreview(attachmentId: string) {
+    return this.http.get(`${this.auth.apiBaseUrl}/api/invoices/attachments/${attachmentId}/preview`, {
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => ({
+        blob: response.body!,
+        contentType: response.headers.get('content-type') ?? 'application/octet-stream'
+      }))
+    );
   }
 }

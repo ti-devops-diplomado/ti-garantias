@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TiGarantias.Api.Contracts;
 using TiGarantias.Api.Data;
 using TiGarantias.Api.Services;
+using TiGarantias.Api.Utils;
 
 namespace TiGarantias.Api.Controllers;
 
@@ -14,7 +15,8 @@ namespace TiGarantias.Api.Controllers;
 public sealed class UsersController(
     AppDbContext dbContext,
     PasswordHasher<User> passwordHasher,
-    IAuditService auditService) : ControllerBase
+    IAuditService auditService,
+    ICurrentUserService currentUserService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<UserSummary>>> GetAll(CancellationToken cancellationToken)
@@ -26,10 +28,17 @@ public sealed class UsersController(
     [HttpPost]
     public async Task<ActionResult<UserSummary>> Create([FromBody] UserUpsertRequest request, CancellationToken cancellationToken)
     {
+        var normalizedEmail = EmailNormalizer.Normalize(request.Email);
+        var emailExists = await dbContext.Users.AnyAsync(x => x.Email.ToLower() == normalizedEmail, cancellationToken);
+        if (emailExists)
+        {
+            return Conflict("Ya existe un usuario con ese correo.");
+        }
+
         var roles = await dbContext.Roles.Where(x => request.Roles.Contains(x.Name)).ToListAsync(cancellationToken);
         var user = new User
         {
-            Email = request.Email.Trim(),
+            Email = normalizedEmail,
             FullName = request.FullName.Trim(),
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
@@ -51,7 +60,14 @@ public sealed class UsersController(
         var user = await dbContext.Users.Include(x => x.UserRoles).ThenInclude(x => x.Role).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (user is null) return NotFound();
 
-        user.Email = request.Email.Trim();
+        var normalizedEmail = EmailNormalizer.Normalize(request.Email);
+        var emailExists = await dbContext.Users.AnyAsync(x => x.Id != id && x.Email.ToLower() == normalizedEmail, cancellationToken);
+        if (emailExists)
+        {
+            return Conflict("Ya existe un usuario con ese correo.");
+        }
+
+        user.Email = normalizedEmail;
         user.FullName = request.FullName.Trim();
         user.IsActive = request.IsActive;
         if (!string.IsNullOrWhiteSpace(request.Password))
@@ -68,6 +84,41 @@ public sealed class UsersController(
 
         user = await dbContext.Users.Include(x => x.UserRoles).ThenInclude(x => x.Role).SingleAsync(x => x.Id == user.Id, cancellationToken);
         return Ok(MapSummary(user));
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    public async Task<ActionResult<UserSummary>> UpdateStatus(Guid id, [FromBody] UserStatusUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (currentUserService.UserId == id && !request.IsActive)
+        {
+            return BadRequest("No puedes desactivar tu propio usuario.");
+        }
+
+        var user = await dbContext.Users
+            .Include(x => x.UserRoles)
+            .ThenInclude(x => x.Role)
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (user is null) return NotFound();
+
+        user.IsActive = request.IsActive;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.RecordAsync("user", user.Id.ToString(), "status-update", request, cancellationToken);
+
+        return Ok(MapSummary(user));
+    }
+
+    [HttpPost("{id:guid}/reset-password")]
+    public async Task<ActionResult> ResetPassword(Guid id, [FromBody] UserPasswordResetRequest request, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (user is null) return NotFound();
+
+        user.PasswordHash = passwordHasher.HashPassword(user, request.NewPassword);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.RecordAsync("user", user.Id.ToString(), "reset-password", new { Reset = true }, cancellationToken);
+
+        return NoContent();
     }
 
     private static UserSummary MapSummary(User user) => new()

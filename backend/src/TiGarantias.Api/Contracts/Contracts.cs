@@ -40,6 +40,17 @@ public sealed class UserUpsertRequest
     public List<string> Roles { get; set; } = new();
 }
 
+public sealed class UserStatusUpdateRequest
+{
+    public bool IsActive { get; set; }
+}
+
+public sealed class UserPasswordResetRequest
+{
+    [Required]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
 public sealed class SupplierRequest
 {
     [Required]
