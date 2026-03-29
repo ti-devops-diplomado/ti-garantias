@@ -21,6 +21,11 @@ public sealed class InvoicesController(
     [HttpGet]
     public async Task<ActionResult<IReadOnlyCollection<InvoiceResponse>>> GetAll([FromQuery] string? scope, CancellationToken cancellationToken)
     {
+        if (!CanAccessScope(scope, currentUserService.Roles))
+        {
+            return Forbid();
+        }
+
         var query = dbContext.Invoices
             .Include(x => x.Contract)
             .Include(x => x.Supplier)
@@ -46,6 +51,7 @@ public sealed class InvoicesController(
     }
 
     [HttpPost]
+    [Authorize(Roles = "Registrador,Admin")]
     public async Task<ActionResult<InvoiceResponse>> Create([FromBody] InvoiceRequest request, CancellationToken cancellationToken)
     {
         if (!currentUserService.UserId.HasValue) return Unauthorized();
@@ -89,6 +95,7 @@ public sealed class InvoicesController(
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Registrador,Admin")]
     public async Task<ActionResult<InvoiceResponse>> Update(Guid id, [FromBody] InvoiceRequest request, CancellationToken cancellationToken)
     {
         var invoice = await dbContext.Invoices.Include(x => x.InvoiceDeliverables).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -143,12 +150,14 @@ public sealed class InvoicesController(
     }
 
     [HttpPost("{id:guid}/attachments")]
+    [Authorize(Roles = "Registrador,Gestor,Admin")]
     public async Task<ActionResult<AttachmentResponse>> UploadAttachment(Guid id, IFormFile file, CancellationToken cancellationToken)
     {
         if (!currentUserService.UserId.HasValue) return Unauthorized();
 
         var invoice = await dbContext.Invoices.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (invoice is null) return NotFound();
+        if (!CanUploadAttachment(invoice, currentUserService.UserId, currentUserService.Roles)) return Forbid();
 
         var saved = await attachmentStorageService.SaveAsync(id, file, cancellationToken);
         var attachment = new Attachment
@@ -225,6 +234,34 @@ public sealed class InvoicesController(
         return attachment.Invoice.CreatedByUserId == currentUserService.UserId.Value
             || attachment.Invoice.RefundManagerUserId == currentUserService.UserId.Value
             || currentUserService.Roles.Contains("Admin");
+    }
+
+    private static bool CanAccessScope(string? scope, IReadOnlyCollection<string> roles)
+    {
+        if (roles.Contains("Admin"))
+        {
+            return true;
+        }
+
+        return scope switch
+        {
+            "managed" => roles.Contains("Gestor"),
+            "mine" => roles.Contains("Registrador"),
+            null or "" or "all" => roles.Contains("Registrador"),
+            _ => false
+        };
+    }
+
+    private static bool CanUploadAttachment(Invoice invoice, Guid? userId, IReadOnlyCollection<string> roles)
+    {
+        if (!userId.HasValue)
+        {
+            return false;
+        }
+
+        return roles.Contains("Admin")
+            || invoice.CreatedByUserId == userId.Value
+            || invoice.RefundManagerUserId == userId.Value;
     }
 
     private static InvoiceResponse MapInvoice(Invoice invoice) => new()
