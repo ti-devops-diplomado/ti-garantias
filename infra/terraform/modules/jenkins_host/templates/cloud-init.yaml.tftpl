@@ -1,0 +1,32 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - git
+
+write_files:
+  - path: /usr/local/bin/bootstrap-jenkins-host.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      curl -fsSL https://get.docker.com | sh
+      usermod -aG docker ${admin_username}
+      systemctl enable docker
+      systemctl restart docker
+
+      %{ if bootstrap && repository_url != "" ~}
+      install -d -o ${admin_username} -g ${admin_username} /opt/ti-garantias
+      if [ ! -d /opt/ti-garantias/app/.git ]; then
+        sudo -u ${admin_username} git clone --branch ${repository_branch} ${repository_url} /opt/ti-garantias/app
+      fi
+
+      cd /opt/ti-garantias/app
+      export JENKINS_PORT=${jenkins_port}
+      docker compose -f deploy/docker-compose.yml --profile ci up -d --build jenkins
+      %{ endif ~}
+
+runcmd:
+  - [ bash, /usr/local/bin/bootstrap-jenkins-host.sh ]

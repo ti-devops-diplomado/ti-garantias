@@ -50,6 +50,9 @@ services:
     container_name: ti-garantias-frontend
     depends_on:
       - backend
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-}
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-http://backend:8080}
     ports:
       - "${FRONTEND_PORT:-4200}:80"
 
@@ -64,6 +67,19 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
       - backend
+      - cadvisor
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: ti-garantias-cadvisor
+    privileged: true
+    ports:
+      - "8085:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
 
   grafana:
     image: grafana/grafana:11.2.0
@@ -96,6 +112,7 @@ services:
     container_name: ti-garantias-promtail
     command: -config.file=/etc/promtail/promtail-config.yml
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - ./monitoring/loki/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
     depends_on:
@@ -103,13 +120,18 @@ services:
 
 
   jenkins:
-    image: jenkins/jenkins:2.462.3-lts-jdk17
+    build:
+      context: ..
+      dockerfile: deploy/jenkins/Dockerfile
+    image: ti-garantias/jenkins-runner:latest
     container_name: ti-garantias-jenkins
     profiles: ["ci"]
+    user: root
     ports:
       - "${JENKINS_PORT:-8081}:8080"
     volumes:
       - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   db_data:

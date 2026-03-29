@@ -1,0 +1,9 @@
+ssh_public_key               = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... tu-correo@equipo"
+public_ip_dns_label          = "tigarantias-jenkins-demo"
+ssh_source_address_prefix    = "0.0.0.0/0"
+jenkins_source_address_prefix = "0.0.0.0/0"
+bootstrap_jenkins            = false
+
+# Opcional si quieres que la VM levante Jenkins automaticamente al primer arranque.
+# repository_url    = "https://github.com/ti-devops-diplomado/ti-garantias.git"
+# repository_branch = "main"
