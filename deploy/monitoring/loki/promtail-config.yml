@@ -18,9 +18,14 @@ scrape_configs:
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"
         target_label: "container"
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "compose_service"
       - source_labels: ["__meta_docker_container_id"]
         target_label: "container_id"
       - source_labels: ["__meta_docker_container_log_stream"]
         target_label: "stream"
       - replacement: "docker"
         target_label: "job"
+      - source_labels: ["__meta_docker_container_id"]
+        target_label: "__path__"
+        replacement: "/var/lib/docker/containers/$1/$1-json.log"
