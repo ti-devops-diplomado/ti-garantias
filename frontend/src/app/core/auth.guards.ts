@@ -16,5 +16,14 @@ export const authGuard: CanActivateFn = () => {
 export const roleGuard = (roles: string[]): CanActivateFn => () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.hasAnyRole(roles) ? true : router.createUrlTree(['/mis-registros']);
+
+  if (auth.hasAnyRole(roles)) {
+    return true;
+  }
+
+  if (auth.hasAnyRole(['Gestor', 'Admin'])) {
+    return router.createUrlTree(['/pendientes-gestion']);
+  }
+
+  return router.createUrlTree(['/mis-registros']);
 };

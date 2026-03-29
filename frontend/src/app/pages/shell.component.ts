@@ -20,8 +20,8 @@ import { AuthService } from '../core/auth.service';
           <p>{{ auth.user()?.fullName }}</p>
         </div>
         <mat-nav-list>
-          <a mat-list-item routerLink="/mis-registros" routerLinkActive="active">Mis registros</a>
-          <a mat-list-item routerLink="/facturas" routerLinkActive="active">Facturas</a>
+          <a mat-list-item *ngIf="auth.hasAnyRole(['Registrador', 'Admin'])" routerLink="/mis-registros" routerLinkActive="active">Mis registros</a>
+          <a mat-list-item *ngIf="auth.hasAnyRole(['Registrador', 'Admin'])" routerLink="/facturas" routerLinkActive="active">Facturas</a>
           <a mat-list-item routerLink="/catalogos" routerLinkActive="active">Catálogos</a>
           <a mat-list-item *ngIf="auth.hasAnyRole(['Gestor', 'Admin'])" routerLink="/pendientes-gestion" routerLinkActive="active">Pendientes por gestionar</a>
           <a mat-list-item *ngIf="auth.hasAnyRole(['Admin'])" routerLink="/admin/usuarios" routerLinkActive="active">Admin usuarios</a>

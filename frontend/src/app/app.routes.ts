@@ -14,9 +14,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'mis-registros' },
-      { path: 'mis-registros', component: InvoicesPageComponent, data: { scope: 'mine' } },
+      { path: 'mis-registros', component: InvoicesPageComponent, canActivate: [roleGuard(['Registrador', 'Admin'])], data: { scope: 'mine' } },
       { path: 'pendientes-gestion', component: InvoicesPageComponent, canActivate: [roleGuard(['Gestor', 'Admin'])], data: { scope: 'managed' } },
-      { path: 'facturas', component: InvoicesPageComponent, data: { scope: 'all' } },
+      { path: 'facturas', component: InvoicesPageComponent, canActivate: [roleGuard(['Registrador', 'Admin'])], data: { scope: 'all' } },
       { path: 'catalogos', component: MasterDataPageComponent },
       { path: 'admin/usuarios', component: UsersPageComponent, canActivate: [roleGuard(['Admin'])] }
     ]
