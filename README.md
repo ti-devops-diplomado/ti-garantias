@@ -69,6 +69,7 @@ docker compose --env-file deploy/env/dev.env -f deploy/docker-compose.yml down
 - Metrics: http://localhost:8080/metrics
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
+- Dashboard Grafana (carpeta `TI Garantias`): `TI Garantias - Health (Realtime)`
 - Jenkins local opcional: `docker compose --profile ci ...` en http://localhost:8081
 - Loki : http://localhost:3100/ready (para verificar en la maquina local)
          http://loki:3100 (para configurar enGrafana)
