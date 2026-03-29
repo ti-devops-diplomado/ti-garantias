@@ -1,0 +1,58 @@
+variable "location" {
+  type    = string
+  default = "eastus"
+}
+
+variable "name_prefix" {
+  type    = string
+  default = "tigarantias"
+}
+
+variable "unique_suffix" {
+  type = string
+}
+
+variable "backend_image" {
+  type = string
+}
+
+variable "frontend_image" {
+  type = string
+}
+
+variable "registry_server" {
+  type    = string
+  default = null
+}
+
+variable "registry_username" {
+  type      = string
+  default   = null
+  sensitive = true
+}
+
+variable "registry_password" {
+  type      = string
+  default   = null
+  sensitive = true
+}
+
+variable "postgresql_admin_username" {
+  type    = string
+  default = "tigarantiasadmin"
+}
+
+variable "postgresql_admin_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "jwt_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}

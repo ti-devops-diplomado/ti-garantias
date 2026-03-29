@@ -48,24 +48,23 @@ jobs:
           dotnet-version: "8.0.x"
           cache: true
 
-      - name: Restore/Build/Test
+      - name: Restore API
         if: steps.detect.outputs.exists == 'true'
-        working-directory: backend
+        working-directory: backend/src/TiGarantias.Api
         shell: bash
-        run: |
-          if [ -f "TiGarantias.slnx" ]; then
-            dotnet restore ./TiGarantias.slnx
-            dotnet build ./TiGarantias.slnx -c Release --no-restore
-            dotnet test ./TiGarantias.slnx -c Release --no-build --verbosity normal
-          elif ls *.sln >/dev/null 2>&1; then
-            dotnet restore ./*.sln
-            dotnet build ./*.sln -c Release --no-restore
-            dotnet test ./*.sln -c Release --no-build --verbosity normal
-          else
-            dotnet restore
-            dotnet build -c Release --no-restore
-            dotnet test -c Release --no-build --verbosity normal
-          fi
+        run: dotnet restore TiGarantias.Api.csproj
+
+      - name: Build API
+        if: steps.detect.outputs.exists == 'true'
+        working-directory: backend/src/TiGarantias.Api
+        shell: bash
+        run: dotnet build TiGarantias.Api.csproj -c Release --no-restore
+
+      - name: Test backend
+        if: steps.detect.outputs.exists == 'true'
+        working-directory: backend/tests/TiGarantias.Api.Tests
+        shell: bash
+        run: dotnet test TiGarantias.Api.Tests.csproj -c Release --verbosity normal
 
   frontend:
     name: Frontend (Angular) - build
@@ -105,3 +104,42 @@ jobs:
         if: steps.detect.outputs.exists == 'true'
         run: npm run build
         working-directory: frontend
+
+  infrastructure:
+    name: Terraform - fmt & validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Terraform init dev
+        run: terraform -chdir=infra/terraform/env/dev init -backend=false
+
+      - name: Terraform validate dev
+        run: terraform -chdir=infra/terraform/env/dev validate
+
+      - name: Terraform init shared
+        run: terraform -chdir=infra/terraform/env/shared init -backend=false
+
+      - name: Terraform validate shared
+        run: terraform -chdir=infra/terraform/env/shared validate
+
+      - name: Terraform init test
+        run: terraform -chdir=infra/terraform/env/test init -backend=false
+
+      - name: Terraform validate test
+        run: terraform -chdir=infra/terraform/env/test validate
+
+      - name: Terraform init prod
+        run: terraform -chdir=infra/terraform/env/prod init -backend=false
+
+      - name: Terraform validate prod
+        run: terraform -chdir=infra/terraform/env/prod validate

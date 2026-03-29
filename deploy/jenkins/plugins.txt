@@ -1,0 +1,9 @@
+configuration-as-code
+credentials-binding
+docker-workflow
+git
+github
+job-dsl
+matrix-auth
+pipeline-stage-view
+workflow-aggregator

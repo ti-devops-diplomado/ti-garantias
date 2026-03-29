@@ -1,0 +1,10 @@
+unique_suffix             = "a001"
+backend_image             = "docker.io/tu-usuario/ti-garantias-backend:v0.1.0-b538348"
+frontend_image            = "docker.io/tu-usuario/ti-garantias-frontend:v0.1.0-b538348"
+postgresql_admin_password = "cambiar-por-secret"
+jwt_secret                = "cambiar-por-secret"
+
+# Solo si el registry es privado.
+# registry_server   = "docker.io"
+# registry_username = "tu-usuario"
+# registry_password = "tu-password-o-token"
