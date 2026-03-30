@@ -157,7 +157,11 @@ pipeline {
               KEY_VAULT_NAME="$(terraform output -raw key_vault_name)"
               POSTGRES_FQDN="$(terraform output -raw postgresql_fqdn)"
               POSTGRES_DATABASE_NAME="$(terraform output -raw postgresql_database_name)"
-              POSTGRES_ADMIN_USERNAME="$(terraform output -raw postgresql_admin_username)"
+              POSTGRES_ADMIN_USERNAME="$(terraform output -raw postgresql_admin_username 2>/dev/null || true)"
+
+              if [ -z "$POSTGRES_ADMIN_USERNAME" ]; then
+                POSTGRES_ADMIN_USERNAME="tigarantiasadmin"
+              fi
 
               az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name connection-string --value "Host=$POSTGRES_FQDN;Port=5432;Database=$POSTGRES_DATABASE_NAME;Username=$POSTGRES_ADMIN_USERNAME;Password=$TF_VAR_postgresql_admin_password;Ssl Mode=Require;Trust Server Certificate=true" --only-show-errors >/dev/null
               az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name jwt-secret --value "$TF_VAR_jwt_secret" --only-show-errors >/dev/null
