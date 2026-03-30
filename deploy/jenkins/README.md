@@ -54,6 +54,21 @@ docker compose -f deploy/docker-compose.yml --profile ci up -d --build jenkins
 - `ti-garantias-prod-jwt-secret`
 - `ti-garantias-prod-unique-suffix`
 
+### Convencion recomendada para `unique-suffix`
+
+Para este piloto se recomienda una convencion institucional del proyecto, no personalizada por usuario:
+
+- `ti-garantias-dev-unique-suffix` = `tgd1`
+- `ti-garantias-test-unique-suffix` = `tgt1`
+- `ti-garantias-prod-unique-suffix` = `tgp1`
+
+Justificacion:
+
+- el nombre del ambiente ya diferencia `dev`, `test` y `prod`
+- cada sufijo sigue representando a `ti-garantias`, pero haciendo visible el ambiente
+- evita usar un sufijo ligado a una persona
+- si Azure reporta colision futura de nombres, el siguiente valor recomendado es mantener el patron y subir el numero, por ejemplo `tgd2`, `tgt2` y `tgp2`
+
 Opcionales si el ambiente usa SMTP autenticado:
 
 - `ti-garantias-dev-smtp-password`

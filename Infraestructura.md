@@ -123,6 +123,31 @@ flowchart TD
 - El backend consume credenciales y cadenas sensibles como secretos del runtime del contenedor.
 - Los adjuntos no quedan en disco efimero: se guardan en `Azure Files`.
 
+## Region Operativa del Piloto
+
+Para mantener consistencia y evitar restricciones de oferta por region, el piloto queda homologado en:
+
+- `shared` -> `centralus`
+- `dev` -> `centralus`
+- `test` -> `centralus`
+- `prod` -> `centralus`
+
+## Convencion de Sufijos por Ambiente
+
+Para el valor `unique-suffix` usado por el pipeline y por Terraform se adopto una convencion propia del proyecto, no asociada a un usuario individual.
+
+Valores recomendados:
+
+- `dev` -> `tgd1`
+- `test` -> `tgt1`
+- `prod` -> `tgp1`
+
+Como explicarlo:
+
+- el nombre del ambiente ya separa `dev`, `test` y `prod`
+- cada sufijo mantiene la referencia al proyecto `ti-garantias` y hace visible el ambiente
+- si en el futuro Azure reporta colision de nombres globales, el siguiente valor a usar es `tgd2`, `tgt2` y `tgp2`
+
 ## Justificacion del Remote State
 
 - `Terraform` necesita un archivo de estado para saber que recursos ya existen y cuales debe crear, modificar o conservar.
@@ -197,6 +222,23 @@ Resolucion aplicada:
 Como explicarlo:
 
 - “Durante la ejecucion real validamos que en Azure no solo importa el codigo de Terraform. Tambien influyen la disponibilidad regional de los SKUs y las cuotas aprobadas por familia de maquinas virtuales. Ajustamos region y cuota hasta completar el despliegue sin perder el control del estado.”
+
+## Incidencia de PostgreSQL y Permisos RBAC
+
+Durante la primera ejecucion del pipeline de `dev` aparecieron dos bloqueos adicionales:
+
+- `Azure Database for PostgreSQL Flexible Server` no pudo aprovisionarse en `eastus` para esta suscripcion y devolvio `LocationIsOfferRestricted`
+- el service principal usado por Jenkins no tenia permiso para ejecutar `roleAssignments/write` sobre `Key Vault`
+
+Resolucion definida:
+
+- mover los stacks de aplicacion `dev`, `test` y `prod` a `centralus`
+- mantener `shared` tambien en `centralus`
+- otorgar al service principal de Jenkins el rol `User Access Administrator` o `Owner` sobre la suscripcion o sobre los scopes de despliegue
+
+Como explicarlo:
+
+- “Una vez superada la fase de bootstrap del pipeline, el siguiente bloqueo real vino de la plataforma: PostgreSQL no podia desplegarse en `East US` para esta suscripcion y Jenkins no tenia privilegios para crear asignaciones RBAC en Key Vault. Estandarizamos la region a `Central US` y ajustamos el rol del service principal para completar la automatizacion.”
 
 ## Preparacion del Host Jenkins
 
