@@ -43,12 +43,19 @@ pipeline {
 
     stage('Terraform quality') {
       steps {
-        sh '''
-          set -euo pipefail
-          terraform fmt -check -recursive infra/terraform
-          terraform -chdir="$TF_ROOT" init -backend=false
-          terraform -chdir="$TF_ROOT" validate
-        '''
+        withCredentials([
+          string(credentialsId: 'azure-client-id', variable: 'ARM_CLIENT_ID'),
+          string(credentialsId: 'azure-client-secret', variable: 'ARM_CLIENT_SECRET'),
+          string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID'),
+          string(credentialsId: 'azure-tenant-id', variable: 'ARM_TENANT_ID')
+        ]) {
+          sh '''
+            set -euo pipefail
+            terraform fmt -check -recursive infra/terraform
+            terraform -chdir="$TF_ROOT" init -backend=false
+            terraform -chdir="$TF_ROOT" validate
+          '''
+        }
       }
     }
 
