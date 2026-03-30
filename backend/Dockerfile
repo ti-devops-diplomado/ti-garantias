@@ -5,7 +5,7 @@ COPY src/TiGarantias.Api/TiGarantias.Api.csproj src/TiGarantias.Api/
 RUN dotnet restore src/TiGarantias.Api/TiGarantias.Api.csproj
 
 COPY src/TiGarantias.Api/ src/TiGarantias.Api/
-RUN dotnet publish src/TiGarantias.Api/TiGarantias.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish src/TiGarantias.Api/TiGarantias.Api.csproj -c Release -o /app/publish /p:UseAppHost=false -v normal
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
