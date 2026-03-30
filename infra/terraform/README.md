@@ -10,6 +10,13 @@ Y una base compartida para automatizacion:
 
 - `shared` para la VM de Jenkins
 
+Region operativa recomendada para el piloto:
+
+- `shared`: `centralus`
+- `dev`: `centralus`
+- `test`: `centralus`
+- `prod`: `centralus`
+
 ## Arquitectura propuesta
 
 - `Azure Container Apps` para frontend y backend
@@ -201,6 +208,26 @@ Aprendizaje clave para exposicion:
 - en Azure no solo importa el codigo de infraestructura
 - tambien importan la capacidad regional y las cuotas por familia de VM
 - Terraform permitio corregir la estrategia sin perder el control del estado ni rehacer todo manualmente
+
+## Incidencias Reales en los Ambientes de Aplicacion
+
+Durante la primera ejecucion del pipeline sobre `dev` aparecieron dos restricciones reales adicionales:
+
+- `Azure Database for PostgreSQL Flexible Server` quedo bloqueado en `eastus` con el error `LocationIsOfferRestricted`
+- el service principal de Jenkins no tenia permisos para ejecutar `Microsoft.Authorization/roleAssignments/write` al intentar asignar roles sobre `Key Vault`
+
+Resolucion aplicada para el codigo:
+
+- se homologo la region por defecto de `dev`, `test` y `prod` a `centralus`
+- se mantuvo `shared` alineado en `centralus`
+
+Accion operativa requerida fuera del repo:
+
+- otorgar al service principal de Jenkins el rol `User Access Administrator` o `Owner` sobre la suscripcion o sobre los resource groups objetivo, para que Terraform pueda crear `role assignments` en `Key Vault`
+
+Como explicarlo:
+
+- “Durante la automatizacion real del despliegue detectamos una restriccion regional para PostgreSQL en `East US` y una restriccion de permisos RBAC para Jenkins. La solucion fue homologar la region operativa a `Central US` y elevar el rol del service principal para permitir asignaciones sobre Key Vault.”
 
 ### Preparacion del host Jenkins
 
