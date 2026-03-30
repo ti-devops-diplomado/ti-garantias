@@ -52,6 +52,12 @@ variable "jwt_secret" {
   sensitive = true
 }
 
+variable "enable_key_vault_secret_references" {
+  description = "Cuando es true, Container Apps consume secretos desde Key Vault usando managed identity."
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

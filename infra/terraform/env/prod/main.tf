@@ -25,14 +25,15 @@ module "stack" {
   backend_app_name               = local.backend_app_name
   frontend_app_name              = local.frontend_app_name
 
-  backend_image             = var.backend_image
-  frontend_image            = var.frontend_image
-  registry_server           = var.registry_server
-  registry_username         = var.registry_username
-  registry_password         = var.registry_password
-  postgresql_admin_username = var.postgresql_admin_username
-  postgresql_admin_password = var.postgresql_admin_password
-  jwt_secret                = var.jwt_secret
+  backend_image                      = var.backend_image
+  frontend_image                     = var.frontend_image
+  registry_server                    = var.registry_server
+  registry_username                  = var.registry_username
+  registry_password                  = var.registry_password
+  postgresql_admin_username          = var.postgresql_admin_username
+  postgresql_admin_password          = var.postgresql_admin_password
+  jwt_secret                         = var.jwt_secret
+  enable_key_vault_secret_references = var.enable_key_vault_secret_references
 
   backend_min_replicas     = 1
   backend_max_replicas     = 2
