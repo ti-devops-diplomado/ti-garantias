@@ -1,3 +1,4 @@
+ansicolor
 configuration-as-code
 credentials-binding
 docker-workflow
