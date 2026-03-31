@@ -89,6 +89,13 @@ El principal usado por Jenkins necesita:
 - escribir secretos en `Key Vault`
 - leer o actualizar el estado remoto de Terraform
 
+En la ejecucion real tambien se confirmo que Jenkins necesita permisos suficientes para crear `role assignments` sobre `Key Vault` durante el bootstrap. En la practica, eso implico otorgar al principal un rol como:
+
+- `User Access Administrator`
+- o `Owner`
+
+segun el scope operativo definido para el piloto.
+
 ## Nota sobre Docker Hub
 
 Para que el despliegue de `Container Apps` funcione, las imagenes primero deben publicarse en `Docker Hub` o en el registry elegido.
@@ -100,3 +107,99 @@ El flujo correcto es:
 3. `terraform plan/apply`
 
 No es `pull` hacia Docker Hub; es `push` desde Jenkins hacia tu repositorio de imagenes.
+
+## Estado operativo actual
+
+Al cierre de esta iteracion Jenkins ya pudo completar el despliegue de `dev` de extremo a extremo:
+
+- build de backend y frontend
+- push de imagenes a Docker Hub
+- bootstrap de `Key Vault` y PostgreSQL
+- `terraform plan`
+- `terraform apply`
+
+Ambiente validado:
+
+- `dev`
+
+## Runbook corto de operacion
+
+### Reconstruir Jenkins despues de cambios en `main`
+
+En la VM:
+
+```bash
+cd /opt/ti-garantias/app
+git fetch origin
+git checkout main
+git pull origin main
+export JENKINS_PORT=8080
+docker compose -f deploy/docker-compose.yml --profile ci up -d --build jenkins
+docker logs --tail 50 ti-garantias-jenkins
+```
+
+Resultado esperado:
+
+- el log termina con `Jenkins is fully up and running`
+
+### Ejecutar despliegue del ambiente `dev`
+
+Parametros recomendados del job `ti-garantias-main > main`:
+
+- `ENVIRONMENT = dev`
+- `TERRAFORM_ACTION = apply`
+- `PUSH_IMAGES = true`
+- `REGISTRY_SERVER = docker.io`
+- `REGISTRY_NAMESPACE = gjrbdev`
+
+### Levantar monitoreo fase 1 en la VM compartida
+
+La fase 1 de monitoreo en cloud usa la misma VM compartida y no depende de ejecutar el backend local ni de tocar PostgreSQL.
+
+Preparacion:
+
+```bash
+cd /opt/ti-garantias/app
+cp deploy/env/monitoring-cloud.env.example deploy/env/monitoring-cloud.env
+```
+
+Levantamiento:
+
+```bash
+docker compose --env-file deploy/env/monitoring-cloud.env -f deploy/docker-compose.yml up -d prometheus grafana loki promtail cadvisor
+```
+
+Acceso esperado:
+
+- `Grafana`: `http://<ip-publica-vm>:3000`
+- `Prometheus`: `http://<ip-publica-vm>:9090`
+
+La configuracion cloud de Prometheus usa:
+
+- [prometheus.cloud.yml](/e:/DMC/garantias-integrador/ti-garantias/deploy/monitoring/prometheus.cloud.yml)
+
+Y scrapea el endpoint:
+
+- `https://tigarantias-dev-fe.mangobay-9146375d.centralus.azurecontainerapps.io/metrics`
+
+### Validar resultado
+
+- revisar que el build termine exitoso en Jenkins
+- revisar revisiones de `tigarantias-dev-fe` y `tigarantias-dev-be`
+- validar acceso al frontend
+- validar login con `admin@demo.local / AdminTemporal123!`
+
+## Incidencias reales resueltas en el pipeline
+
+Durante la puesta en marcha real se resolvieron estas incidencias:
+
+- soporte `ansiColor` faltante en Jenkins
+- autenticacion Azure faltante en `Terraform quality`
+- propagacion de `enable_key_vault_secret_references` en roots `dev/test/prod`
+- mayor verbosidad en `dotnet publish` para evitar timeouts del runner
+- fallback de `postgresql_admin_username` durante el bootstrap
+- homologacion de region a `centralus`
+- drift de `zone` en PostgreSQL Flexible Server
+- correccion del `Host` reenviado por el frontend al backend interno
+- exposicion de `/metrics` en el frontend para permitir scrape desde Prometheus en la VM compartida
+- registro de `Microsoft.App` y `Microsoft.OperationalInsights` en la suscripcion

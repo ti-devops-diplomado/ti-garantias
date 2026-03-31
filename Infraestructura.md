@@ -252,6 +252,111 @@ Frase sugerida:
 
 - “Una vez aprovisionada la VM compartida, el siguiente paso fue prepararla como host de contenedores instalando Docker y habilitando su uso para el usuario administrador.”
 
+## Estado Actual del Piloto
+
+Al cierre de esta iteracion el ambiente `dev` quedo desplegado y operativo en `Azure Container Apps`.
+
+Estado confirmado:
+
+- `shared` desplegado en `centralus`
+- `Jenkins` operativo en la VM compartida
+- `dev` desplegado en `centralus`
+- `frontend` publico activo
+- `backend` interno activo
+- `PostgreSQL Flexible Server` operativo
+- `Key Vault`, `Log Analytics`, `Storage Account` y `Azure File Share` creados
+
+Recursos relevantes del ambiente `dev`:
+
+- Resource Group: `tigarantias-dev-rg`
+- Frontend publico: `https://tigarantias-dev-fe.mangobay-9146375d.centralus.azurecontainerapps.io`
+- Backend interno: `https://tigarantias-dev-be.internal.mangobay-9146375d.centralus.azurecontainerapps.io`
+- Container Apps Environment: `tigarantias-dev-cae`
+- Log Analytics Workspace: `tigarantias-dev-law`
+- Key Vault: `tigarantiasdevtgd1kv`
+- PostgreSQL Flexible Server: `tigarantias-dev-pg-tgd1`
+
+Acceso funcional de demostracion:
+
+- usuario: `admin@demo.local`
+- clave temporal: `AdminTemporal123!`
+
+Importante:
+
+- el backend no se expone publicamente; el acceso esperado es `navegador -> frontend -> proxy nginx -> backend interno`
+- el frontend publica `/api`, `/swagger`, `/hangfire` y `/health` por proxy hacia el backend
+
+## Ajustes Reales Descubiertos en la Ejecucion
+
+Durante el despliegue real no basto con el diseno inicial. Fue necesario ajustar codigo, permisos y prerequisitos de Azure:
+
+- agregar `ansicolor` a Jenkins para soportar `ansiColor('xterm')` en el pipeline
+- propagar `enable_key_vault_secret_references` en los roots `dev`, `test` y `prod`
+- inyectar credenciales Azure al stage `Terraform quality`
+- aumentar la verbosidad de `dotnet publish` para evitar timeouts de Jenkins durante el build del backend
+- homologar `shared`, `dev`, `test` y `prod` a `centralus`
+- ignorar drift de `zone` en PostgreSQL Flexible Server
+- corregir el proxy del frontend para reenviar `Host` como `$proxy_host` hacia el backend interno
+- registrar en la suscripcion los providers `Microsoft.App` y `Microsoft.OperationalInsights`
+
+## Requisitos Operativos de Azure
+
+El despliegue funcional de `dev` dejo confirmados estos prerequisitos fuera del codigo:
+
+- cuota disponible para la familia de VM usada por Jenkins
+- service principal de Jenkins con permisos suficientes para crear `role assignments` sobre `Key Vault`
+- suscripcion registrada para:
+  - `Microsoft.App`
+  - `Microsoft.OperationalInsights`
+
+Comandos usados para registrar los providers:
+
+```powershell
+az account set --subscription "0fea1ea0-c233-413b-b838-4da0e883596d"
+az provider register --namespace Microsoft.App --wait
+az provider register --namespace Microsoft.OperationalInsights --wait
+```
+
+## Operacion del Piloto
+
+Checklist minima de operacion para `dev`:
+
+- validar `frontend` cargando la URL publica
+- validar login con el usuario demo
+- revisar `health` y `swagger` a traves del frontend
+- verificar ultimo build exitoso de Jenkins
+- revisar estado de revisiones en `Container Apps`
+- revisar logs de backend y frontend ante cualquier incidente
+
+Monitoreo fase 1 en cloud:
+
+- `Grafana` y `Prometheus` corren en la VM compartida de Azure
+- `Prometheus` scrapea `https://tigarantias-dev-fe.mangobay-9146375d.centralus.azurecontainerapps.io/metrics`
+- el frontend publica `/metrics` y lo proxyea hacia el backend interno
+- `Grafana` consulta a `Prometheus` para metricas
+- los logs de `Container Apps` siguen consultandose en `Log Analytics` durante esta fase
+
+Proteccion de datos en esta fase:
+
+- esta iteracion de monitoreo no modifica recursos de base de datos
+- no cambia `PostgreSQL Flexible Server`, su base, ni sus secretos
+- el objetivo es sumar observabilidad sin recrear infraestructura de datos
+
+Comandos utiles de operacion:
+
+```powershell
+az containerapp show --name tigarantias-dev-fe --resource-group tigarantias-dev-rg --query "{provisioningState:properties.provisioningState,runningStatus:properties.runningStatus,latestReadyRevisionName:properties.latestReadyRevisionName}" --output table
+az containerapp show --name tigarantias-dev-be --resource-group tigarantias-dev-rg --query "{provisioningState:properties.provisioningState,runningStatus:properties.runningStatus,latestReadyRevisionName:properties.latestReadyRevisionName}" --output table
+az containerapp revision list --name tigarantias-dev-fe --resource-group tigarantias-dev-rg --output table
+az containerapp revision list --name tigarantias-dev-be --resource-group tigarantias-dev-rg --output table
+```
+
+## Como explicar la arquitectura operativa
+
+Frase sugerida:
+
+- “El ambiente `dev` quedo desplegado con frontend publico y backend interno. El frontend expone la experiencia de usuario y hace proxy al backend dentro del mismo Container Apps Environment. Jenkins construye las imagenes, publica en Docker Hub y Terraform aplica la infraestructura en Azure usando estado remoto compartido.”
+
 ## Flujo CI/CD
 
 ```mermaid

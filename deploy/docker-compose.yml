@@ -62,11 +62,10 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${PROMETHEUS_CONFIG_PATH:-./monitoring/prometheus.yml}:/etc/prometheus/prometheus.yml:ro
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
-      - backend
       - cadvisor
 
   cadvisor:
