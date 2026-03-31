@@ -37,7 +37,11 @@ public sealed class InvoicesController(
 
         if (!currentUserService.Roles.Contains("Admin") && currentUserService.UserId.HasValue)
         {
-            query = query.Where(x => x.CreatedByUserId == currentUserService.UserId.Value);
+            var userId = currentUserService.UserId.Value;
+
+            query = scope == "managed" && currentUserService.Roles.Contains("Gestor")
+                ? query.Where(x => x.RefundManagerUserId == userId)
+                : query.Where(x => x.CreatedByUserId == userId);
         }
 
         if (scope == "managed")
@@ -260,7 +264,8 @@ public sealed class InvoicesController(
         }
 
         return roles.Contains("Admin")
-            || invoice.CreatedByUserId == userId.Value;
+            || invoice.CreatedByUserId == userId.Value
+            || (roles.Contains("Gestor") && invoice.RefundManagerUserId == userId.Value);
     }
 
     private bool CanAccessInvoice(Invoice invoice)
@@ -271,7 +276,8 @@ public sealed class InvoicesController(
         }
 
         return currentUserService.Roles.Contains("Admin")
-            || invoice.CreatedByUserId == currentUserService.UserId.Value;
+            || invoice.CreatedByUserId == currentUserService.UserId.Value
+            || (currentUserService.Roles.Contains("Gestor") && invoice.RefundManagerUserId == currentUserService.UserId.Value);
     }
 
     private static InvoiceResponse MapInvoice(Invoice invoice) => new()

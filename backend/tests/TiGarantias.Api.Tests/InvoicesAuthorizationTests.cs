@@ -19,7 +19,7 @@ public sealed class InvoicesAuthorizationTests
 
     [Theory]
     [InlineData(nameof(InvoicesController.Create), "Registrador,Admin")]
-    [InlineData(nameof(InvoicesController.Update), "Registrador,Admin")]
+    [InlineData(nameof(InvoicesController.Update), "Registrador,Gestor,Admin")]
     [InlineData(nameof(InvoicesController.ManageRefund), "Gestor,Admin")]
     [InlineData(nameof(InvoicesController.UploadAttachment), "Registrador,Gestor,Admin")]
     public void Invoice_actions_require_expected_roles(string methodName, string expectedRoles)
@@ -74,6 +74,43 @@ public sealed class InvoicesAuthorizationTests
         Assert.Equal(expected, result);
     }
 
+    [Theory]
+    [InlineData("Admin", true, false, true)]
+    [InlineData("Registrador", true, false, true)]
+    [InlineData("Gestor", false, true, true)]
+    [InlineData("Registrador", false, false, false)]
+    [InlineData("Gestor", false, false, false)]
+    public void Invoice_access_requires_admin_creator_or_assigned_manager(string role, bool isCreator, bool isManager, bool expected)
+    {
+        var userId = Guid.NewGuid();
+        var invoice = new Invoice
+        {
+            CreatedByUserId = isCreator ? userId : Guid.NewGuid(),
+            RefundManagerUserId = isManager ? userId : Guid.NewGuid()
+        };
+
+        var currentUserService = new CurrentUserStub
+        {
+            UserId = userId,
+            Roles = new[] { role }
+        };
+
+        var controller = new InvoicesController(
+            dbContext: null!,
+            currentUserService,
+            invoiceStatusService: null!,
+            attachmentStorageService: null!,
+            auditService: null!);
+
+        var method = typeof(InvoicesController).GetMethod("CanAccessInvoice", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.NotNull(method);
+
+        var result = (bool)method!.Invoke(controller, new object[] { invoice })!;
+
+        Assert.Equal(expected, result);
+    }
+
     private static T InvokeStatic<T>(string methodName, params object?[] args)
     {
         var method = typeof(InvoicesController).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
@@ -82,4 +119,11 @@ public sealed class InvoicesAuthorizationTests
 
         return (T)method!.Invoke(null, args)!;
     }
+}
+
+file sealed class CurrentUserStub : Services.ICurrentUserService
+{
+    public Guid? UserId { get; init; }
+
+    public IReadOnlyCollection<string> Roles { get; init; } = Array.Empty<string>();
 }
