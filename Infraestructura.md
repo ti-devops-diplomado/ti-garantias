@@ -299,6 +299,30 @@ Durante el despliegue real no basto con el diseno inicial. Fue necesario ajustar
 - corregir el proxy del frontend para reenviar `Host` como `$proxy_host` hacia el backend interno
 - registrar en la suscripcion los providers `Microsoft.App` y `Microsoft.OperationalInsights`
 
+## Empaquetado de Backend y Frontend
+
+El repositorio ya deja definidos `Dockerfile` separados para backend y frontend, con responsabilidades distintas y orientadas al pipeline.
+
+Backend:
+
+- usa build multi-stage con `mcr.microsoft.com/dotnet/sdk:8.0` para compilar y publicar
+- genera una imagen final liviana sobre `mcr.microsoft.com/dotnet/aspnet:8.0`
+- expone el servicio por puerto `8080`
+- publica la API con `dotnet publish` y `UseAppHost=false`
+
+Frontend:
+
+- usa `node:22.14.0-alpine` para compilar Angular
+- genera una imagen final sobre `nginx:1.27.4-alpine`
+- publica el sitio por puerto `80`
+- conserva `nginx.conf`, `env.template.js` y `40-write-env.sh` para inyectar configuracion al arranque
+
+Implicacion para CI/CD:
+
+- Jenkins construye imagenes inmutables desde estos `Dockerfile`
+- el despliegue a Azure Container Apps no recompila codigo en runtime
+- la configuracion de ambiente se resuelve por variables y secretos, no por rebuild manual
+
 ## Requisitos Operativos de Azure
 
 El despliegue funcional de `dev` dejo confirmados estos prerequisitos fuera del codigo:
