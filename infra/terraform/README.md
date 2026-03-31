@@ -249,6 +249,42 @@ Referencias utiles:
 - usuario demo: `admin@demo.local`
 - clave temporal: `AdminTemporal123!`
 
+## Operacion multiambiente
+
+Los roots `env/dev`, `env/test` y `env/prod` comparten el mismo modulo base, pero cada uno conserva su propio estado, secretos y sufijo de nombres.
+
+Mapa de ambientes:
+
+- `infra/terraform/env/dev`
+  - backend remoto esperado: `ti-garantias-dev.tfstate`
+  - credenciales Jenkins: `ti-garantias-dev-*`
+  - sufijo recomendado: `tgd1`
+- `infra/terraform/env/test`
+  - backend remoto esperado: `ti-garantias-test.tfstate`
+  - credenciales Jenkins: `ti-garantias-test-*`
+  - sufijo recomendado: `tgt1`
+- `infra/terraform/env/prod`
+  - backend remoto esperado: `ti-garantias-prod.tfstate`
+  - credenciales Jenkins: `ti-garantias-prod-*`
+  - sufijo recomendado: `tgp1`
+
+Principios del diseno multiambiente:
+
+- mismo patron de infraestructura para todos los ambientes
+- estados remotos separados para evitar colisiones
+- secretos separados por ambiente
+- nombres globalmente unicos usando `unique-suffix`
+- despliegue promovible sin reescribir Terraform por ambiente
+
+Secuencia recomendada de promocion:
+
+1. validar cambios en CI
+2. desplegar y probar en `dev`
+3. repetir `plan/apply` en `test`
+4. aprobar despliegue a `prod`
+
+Esto permite que el proyecto mantenga consistencia tecnica entre ambientes sin sacrificar aislamiento operativo.
+
 ## Resource Providers requeridos
 
 Antes de desplegar `Container Apps`, la suscripcion debe tener registrados estos providers:
