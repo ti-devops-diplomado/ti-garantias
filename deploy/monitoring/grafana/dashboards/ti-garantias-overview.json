@@ -70,7 +70,7 @@
       },
       "targets": [
         {
-          "expr": "up{job=\"ti-garantias-backend\"}",
+          "expr": "max(up{job=\"ti-garantias-dev-backend\"})",
           "refId": "A"
         }
       ],
@@ -129,7 +129,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_requests_received_total[5m]))",
+          "expr": "sum(rate(http_requests_received_total{job=\"ti-garantias-dev-backend\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -188,7 +188,7 @@
       },
       "targets": [
         {
-          "expr": "process_working_set_bytes",
+          "expr": "max(process_working_set_bytes{job=\"ti-garantias-dev-backend\"})",
           "refId": "A"
         }
       ],
@@ -247,7 +247,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(process_cpu_seconds_total[5m]))",
+          "expr": "sum(rate(process_cpu_seconds_total{job=\"ti-garantias-dev-backend\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -283,7 +283,7 @@
       },
       "targets": [
         {
-          "expr": "rate(http_requests_received_total[5m])",
+          "expr": "rate(http_requests_received_total{job=\"ti-garantias-dev-backend\"}[5m])",
           "legendFormat": "{{method}} {{code}}",
           "refId": "A"
         }
@@ -320,12 +320,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_requests_received_total{code=~\"5..\"}[5m]))",
+          "expr": "sum(rate(http_requests_received_total{job=\"ti-garantias-dev-backend\", code=~\"5..\"}[5m]))",
           "legendFormat": "5xx",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_requests_received_total{code=~\"4..\"}[5m]))",
+          "expr": "sum(rate(http_requests_received_total{job=\"ti-garantias-dev-backend\", code=~\"4..\"}[5m]))",
           "legendFormat": "4xx",
           "refId": "B"
         }
@@ -367,7 +367,7 @@
           "refId": "A"
         }
       ],
-      "title": "CPU por contenedor",
+      "title": "CPU por contenedor de la VM",
       "type": "timeseries"
     },
     {
@@ -404,7 +404,7 @@
           "refId": "A"
         }
       ],
-      "title": "Memoria por contenedor",
+      "title": "Memoria por contenedor de la VM",
       "type": "timeseries"
     },
     {
