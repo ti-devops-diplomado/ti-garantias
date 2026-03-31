@@ -19,9 +19,12 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatCheckboxModule, MatDatepickerModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule],
   template: `
-    <ng-container *ngIf="scope === 'all'; else standardLayout">
+    <ng-container *ngIf="scope !== 'mine'; else mineLayout">
       <mat-card>
         <h2>{{ title }}</h2>
+        <p class="section-help" *ngIf="scope === 'managed'">
+          Completa y gestiona las facturas asignadas desde la misma vista, con el mismo formato operativo del listado general de facturas.
+        </p>
         <form [formGroup]="form" (ngSubmit)="saveInvoice()">
           <mat-form-field appearance="outline">
             <mat-label>Proveedor</mat-label>
@@ -79,8 +82,12 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
           </mat-form-field>
           <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
           <div class="form-actions">
-            <button mat-flat-button color="primary" type="submit">{{ submitLabel() }}</button>
-            <button mat-stroked-button type="button" *ngIf="editingInvoiceId()" (click)="cancelEdit()">Cancelar edición</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="scope === 'managed' && !editingInvoiceId()">
+              {{ scope === 'managed' ? 'Guardar cambios' : submitLabel() }}
+            </button>
+            <button mat-stroked-button type="button" *ngIf="editingInvoiceId()" (click)="cancelEdit()">
+              {{ scope === 'managed' ? 'Cancelar' : 'Cancelar edición' }}
+            </button>
           </div>
         </form>
 
@@ -113,7 +120,9 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
               <td>{{ item.refundManagerName || 'Sin asignar' }}</td>
               <td>{{ item.attachments.length }}</td>
               <td class="actions">
-                <button mat-stroked-button type="button" (click)="startEdit(item)">Editar</button>
+                <button mat-stroked-button type="button" (click)="startEdit(item)">
+                  {{ scope === 'managed' ? 'Completar datos' : 'Editar' }}
+                </button>
                 <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
                 <label class="upload-action">
                   <span>Adjuntar</span>
@@ -129,135 +138,41 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
       </mat-card>
     </ng-container>
 
-    <ng-template #standardLayout>
-      <ng-container *ngIf="scope === 'mine'; else managedLayout">
-        <mat-card>
-          <h2>{{ title }}</h2>
-          <div class="cards">
-            <article class="invoice" *ngFor="let item of invoices()">
-              <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
-              <p>{{ item.supplierName }} / {{ invoiceContractLabel(item) }}</p>
-              <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
-              <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
-              <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
-              <div class="attachments" *ngIf="item.attachments.length; else noAttachments">
-                <strong>Adjuntos</strong>
-                <button *ngFor="let attachment of item.attachments"
-                        type="button"
-                        class="attachment-link"
-                        (click)="previewAttachment(attachment.id, attachment.originalFileName)">
-                  {{ attachment.originalFileName }}
-                </button>
-              </div>
-              <ng-template #noAttachments>
-                <small>Sin adjuntos</small>
-              </ng-template>
-            </article>
-            <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
-          </div>
-        </mat-card>
-      </ng-container>
-
-      <ng-template #managedLayout>
-        <section class="grid">
-          <mat-card class="editor" *ngIf="canEditInvoices; else managedHelp">
-            <h2>{{ editingInvoiceId() ? 'Completar datos de factura' : 'Selecciona una factura' }}</h2>
-            <form [formGroup]="form" (ngSubmit)="saveInvoice()">
-              <mat-form-field appearance="outline">
-                <mat-label>Proveedor</mat-label>
-                <mat-select formControlName="supplierId">
-                  <mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Contrato</mat-label>
-                <mat-select formControlName="contractId">
-                  <mat-option *ngFor="let item of filteredContracts()" [value]="item.id">{{ contractLabel(item) }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Factura</mat-label>
-                <input matInput formControlName="invoiceNumber" placeholder="999-999-999999999" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Fecha inicio</mat-label>
-                <input
-                  matInput
-                  [matDatepicker]="managedInvoiceDatePicker"
-                  formControlName="invoiceDate"
-                  placeholder="AAAA-MM-DD o DD/MM/AAAA" />
-                <mat-datepicker-toggle matIconSuffix [for]="managedInvoiceDatePicker"></mat-datepicker-toggle>
-                <mat-datepicker #managedInvoiceDatePicker></mat-datepicker>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Fecha vencimiento</mat-label>
-                <input matInput formControlName="estimatedRefundDate" readonly />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Valor factura</mat-label>
-                <input matInput type="number" formControlName="invoiceAmount" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>OC</mat-label>
-                <input matInput formControlName="purchaseOrder" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Valor retenido</mat-label>
-                <input matInput type="number" formControlName="retainedAmount" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Entregables</mat-label>
-                <mat-select formControlName="deliverableIds" multiple>
-                  <mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
-              <div class="form-actions">
-                <button mat-flat-button color="primary" type="submit" [disabled]="!editingInvoiceId()">Guardar cambios</button>
-                <button mat-stroked-button type="button" *ngIf="editingInvoiceId()" (click)="cancelEdit()">Cancelar</button>
-              </div>
-            </form>
-          </mat-card>
-          <ng-template #managedHelp>
-            <mat-card>
-              <p>Selecciona una factura para completar sus datos.</p>
-            </mat-card>
-          </ng-template>
-
-          <mat-card>
-            <h2>{{ title }}</h2>
-            <div class="cards">
-              <article class="invoice" *ngFor="let item of invoices()">
-                <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
-                <p>{{ item.supplierName }} / {{ invoiceContractLabel(item) }}</p>
-                <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
-                <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
-                <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
-                <div class="actions">
-                  <button mat-stroked-button type="button" (click)="startEdit(item)">Completar datos</button>
-                  <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
-                  <label class="upload-action">
-                    <span>Adjuntar</span>
-                    <input type="file" (change)="upload(item.id, $event)" />
-                  </label>
-                </div>
-                <small *ngIf="item.attachments.length">Adjuntos: {{ item.attachments.length }}</small>
-              </article>
-              <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
+    <ng-template #mineLayout>
+      <mat-card>
+        <h2>{{ title }}</h2>
+        <div class="cards">
+          <article class="invoice" *ngFor="let item of invoices()">
+            <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
+            <p>{{ item.supplierName }} / {{ invoiceContractLabel(item) }}</p>
+            <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
+            <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
+            <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
+            <div class="attachments" *ngIf="item.attachments.length; else noAttachments">
+              <strong>Adjuntos</strong>
+              <button *ngFor="let attachment of item.attachments"
+                      type="button"
+                      class="attachment-link"
+                      (click)="previewAttachment(attachment.id, attachment.originalFileName)">
+                {{ attachment.originalFileName }}
+              </button>
             </div>
-          </mat-card>
-        </section>
-      </ng-template>
+            <ng-template #noAttachments>
+              <small>Sin adjuntos</small>
+            </ng-template>
+          </article>
+          <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
+        </div>
+      </mat-card>
     </ng-template>
   `,
   styles: [`
-    .grid { display: grid; gap: 20px; grid-template-columns: minmax(320px, 420px) 1fr; }
     form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .form-actions { display: flex; gap: 8px; align-items: center; }
-    .editor { align-self: start; }
+    .section-help { margin: 0 0 16px; color: #566573; }
     .upload-action { position: relative; display: inline-flex; align-items: center; border: 1px solid #8a8a8a; border-radius: 20px; padding: 6px 12px; cursor: pointer; font: inherit; }
     .upload-action input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .empty { text-align: center; color: #666; }
@@ -268,7 +183,6 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
     .attachment-link { border: 0; padding: 0; background: transparent; color: #17324d; text-align: left; cursor: pointer; font: inherit; }
     .attachment-link:hover { text-decoration: underline; }
     @media (max-width: 960px) {
-      .grid { grid-template-columns: 1fr; }
       form { grid-template-columns: 1fr; }
       table { display: block; overflow-x: auto; }
     }
