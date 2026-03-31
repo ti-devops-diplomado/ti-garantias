@@ -36,11 +36,16 @@ pipeline {
             def shortSha = env.GIT_COMMIT.take(7)
             def isUserTriggered = currentBuild.rawBuild.getCause(hudson.model.Cause.UserIdCause) != null
             def isAutomaticMainBuild = env.BRANCH_NAME == 'main' && !isUserTriggered
+            def isAutomaticBranchBuild = env.BRANCH_NAME != 'main' && !isUserTriggered
             def requestedNamespace = params.REGISTRY_NAMESPACE?.trim()
 
             env.EFFECTIVE_ENVIRONMENT = isAutomaticMainBuild ? 'dev' : params.ENVIRONMENT
             env.EFFECTIVE_TERRAFORM_ACTION = isAutomaticMainBuild ? 'apply' : params.TERRAFORM_ACTION
-            env.EFFECTIVE_PUSH_IMAGES = isAutomaticMainBuild ? 'true' : params.PUSH_IMAGES.toString()
+            env.EFFECTIVE_PUSH_IMAGES = isAutomaticMainBuild
+              ? 'true'
+              : isAutomaticBranchBuild
+                ? 'false'
+                : params.PUSH_IMAGES.toString()
             env.EFFECTIVE_REGISTRY_SERVER = params.REGISTRY_SERVER?.trim() ? params.REGISTRY_SERVER.trim() : 'docker.io'
             env.EFFECTIVE_REGISTRY_NAMESPACE = requestedNamespace && requestedNamespace != 'tu-usuario'
               ? requestedNamespace
