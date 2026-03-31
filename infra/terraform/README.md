@@ -229,6 +229,119 @@ Como explicarlo:
 
 - “Durante la automatizacion real del despliegue detectamos una restriccion regional para PostgreSQL en `East US` y una restriccion de permisos RBAC para Jenkins. La solucion fue homologar la region operativa a `Central US` y elevar el rol del service principal para permitir asignaciones sobre Key Vault.”
 
+## Estado actual de `dev`
+
+El ambiente `dev` quedo desplegado y funcionando en `centralus`.
+
+Estado confirmado:
+
+- `frontend` publico en Azure Container Apps
+- `backend` interno en Azure Container Apps
+- `PostgreSQL Flexible Server` operativo
+- `Key Vault` con secretos del runtime
+- `Log Analytics Workspace` operativo
+- `Storage Account` y `Azure File Share` para adjuntos
+
+Referencias utiles:
+
+- frontend: `https://tigarantias-dev-fe.mangobay-9146375d.centralus.azurecontainerapps.io`
+- backend interno: `https://tigarantias-dev-be.internal.mangobay-9146375d.centralus.azurecontainerapps.io`
+- usuario demo: `admin@demo.local`
+- clave temporal: `AdminTemporal123!`
+
+## Resource Providers requeridos
+
+Antes de desplegar `Container Apps`, la suscripcion debe tener registrados estos providers:
+
+- `Microsoft.App`
+- `Microsoft.OperationalInsights`
+
+Comandos de registro:
+
+```powershell
+az account set --subscription "0fea1ea0-c233-413b-b838-4da0e883596d"
+az provider register --namespace Microsoft.App --wait
+az provider register --namespace Microsoft.OperationalInsights --wait
+```
+
+Validacion:
+
+```powershell
+az provider show --namespace Microsoft.App --query registrationState --output tsv
+az provider show --namespace Microsoft.OperationalInsights --query registrationState --output tsv
+```
+
+El resultado esperado en ambos casos es:
+
+```text
+Registered
+```
+
+## Notas operativas del modulo `pilot_environment`
+
+Aprendizajes que quedaron incorporados al codigo:
+
+- `backend_external_enabled = false` mantiene el backend como servicio interno
+- el frontend publica el sitio y proxyea `/api`, `/swagger`, `/hangfire` y `/health`
+- se ignora drift de `zone` en PostgreSQL Flexible Server porque Azure puede asignarla automaticamente
+- el pipeline hace un bootstrap inicial de `Key Vault` y PostgreSQL con `-target` y luego ejecuta `plan/apply` completo
+- si el output `postgresql_admin_username` no aparece despues del bootstrap, Jenkins usa como fallback `tigarantiasadmin`
+
+## Operacion basica
+
+Comandos utiles para revisar salud del ambiente:
+
+```powershell
+az containerapp show --name tigarantias-dev-fe --resource-group tigarantias-dev-rg --query "{provisioningState:properties.provisioningState,runningStatus:properties.runningStatus,latestReadyRevisionName:properties.latestReadyRevisionName}" --output table
+az containerapp show --name tigarantias-dev-be --resource-group tigarantias-dev-rg --query "{provisioningState:properties.provisioningState,runningStatus:properties.runningStatus,latestReadyRevisionName:properties.latestReadyRevisionName}" --output table
+az containerapp revision list --name tigarantias-dev-fe --resource-group tigarantias-dev-rg --output table
+az containerapp revision list --name tigarantias-dev-be --resource-group tigarantias-dev-rg --output table
+```
+
+Smoke test sugerido:
+
+1. abrir la URL publica del frontend
+2. iniciar sesion con `admin@demo.local`
+3. validar que `/api/auth/login` responde a traves del frontend
+4. abrir `/swagger/index.html` desde el frontend
+5. validar CRUD basico y carga de adjuntos
+
+## Monitoreo fase 1 en cloud
+
+Para la primera fase de monitoreo en Azure se adopta una estrategia pragmatica:
+
+- `Grafana` y `Prometheus` se ejecutan en la VM compartida
+- `Prometheus` scrapea el endpoint `/metrics` del frontend publico
+- el frontend reenvia `/metrics` al backend interno dentro del mismo `Container Apps Environment`
+- los logs operativos del ambiente siguen viendose en `Log Analytics`
+
+Archivos preparados para esta fase:
+
+- [docker-compose.yml](/e:/DMC/garantias-integrador/ti-garantias/deploy/docker-compose.yml)
+- [prometheus.cloud.yml](/e:/DMC/garantias-integrador/ti-garantias/deploy/monitoring/prometheus.cloud.yml)
+- [monitoring-cloud.env.example](/e:/DMC/garantias-integrador/ti-garantias/deploy/env/monitoring-cloud.env.example)
+
+## Nota sobre integridad de datos
+
+La fase 1 de monitoreo no toca recursos persistentes de aplicacion.
+
+No modifica:
+
+- `PostgreSQL Flexible Server`
+- base de datos `ti_garantias`
+- `Key Vault`
+- `Storage Account` o `Azure Files`
+
+Su objetivo es sumar observabilidad sin provocar recreaciones de infraestructura de datos.
+
+## Deuda tecnica ya identificada
+
+Actualmente `azurerm_storage_share.attachments` usa `storage_account_name`, propiedad marcada como deprecada por el provider.
+
+Pendiente recomendado:
+
+- migrar a `storage_account_id` antes de subir a `azurerm` v5
+
 ### Preparacion del host Jenkins
 
 Una vez creada la VM compartida, el siguiente paso operativo fue prepararla como host de contenedores:
