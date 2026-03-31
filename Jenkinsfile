@@ -40,12 +40,17 @@ pipeline {
             def requestedNamespace = params.REGISTRY_NAMESPACE?.trim()
 
             env.EFFECTIVE_ENVIRONMENT = isAutomaticMainBuild ? 'dev' : params.ENVIRONMENT
-            env.EFFECTIVE_TERRAFORM_ACTION = isAutomaticMainBuild ? 'apply' : params.TERRAFORM_ACTION
+            env.EFFECTIVE_TERRAFORM_ACTION = isAutomaticMainBuild
+              ? 'apply'
+              : isAutomaticBranchBuild
+                ? 'plan'
+                : params.TERRAFORM_ACTION
             env.EFFECTIVE_PUSH_IMAGES = isAutomaticMainBuild
               ? 'true'
               : isAutomaticBranchBuild
                 ? 'false'
                 : params.PUSH_IMAGES.toString()
+            env.EFFECTIVE_ENABLE_CD = (isAutomaticMainBuild || isUserTriggered) ? 'true' : 'false'
             env.EFFECTIVE_REGISTRY_SERVER = params.REGISTRY_SERVER?.trim() ? params.REGISTRY_SERVER.trim() : 'docker.io'
             env.EFFECTIVE_REGISTRY_NAMESPACE = requestedNamespace && requestedNamespace != 'tu-usuario'
               ? requestedNamespace
@@ -121,6 +126,9 @@ pipeline {
     }
 
     stage('Terraform init') {
+      when {
+        expression { return env.EFFECTIVE_ENABLE_CD == 'true' }
+      }
       steps {
         dir("${env.TF_ROOT}") {
           withCredentials([
@@ -144,7 +152,7 @@ pipeline {
 
     stage('Bootstrap Key Vault secrets') {
       when {
-        expression { return env.EFFECTIVE_TERRAFORM_ACTION == 'apply' }
+        expression { return env.EFFECTIVE_ENABLE_CD == 'true' && env.EFFECTIVE_TERRAFORM_ACTION == 'apply' }
       }
       steps {
         dir("${env.TF_ROOT}") {
@@ -202,6 +210,9 @@ pipeline {
     }
 
     stage('Terraform plan/apply') {
+      when {
+        expression { return env.EFFECTIVE_ENABLE_CD == 'true' }
+      }
       steps {
         dir("${env.TF_ROOT}") {
           withCredentials([
