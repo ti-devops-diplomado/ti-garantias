@@ -287,6 +287,44 @@ Aprendizajes que quedaron incorporados al codigo:
 - el pipeline hace un bootstrap inicial de `Key Vault` y PostgreSQL con `-target` y luego ejecuta `plan/apply` completo
 - si el output `postgresql_admin_username` no aparece despues del bootstrap, Jenkins usa como fallback `tigarantiasadmin`
 
+## Recursos base del modulo `pilot_environment`
+
+El modulo reutilizable de ambientes define una base comun para `dev`, `test` y `prod`. Esa base representa los recursos minimos que necesita cada ambiente antes de considerar datos funcionales o integraciones futuras.
+
+Recursos base por ambiente:
+
+- `Resource Group`
+  - contenedor logico del ambiente
+- `Log Analytics Workspace`
+  - observabilidad basica de `Container Apps`
+- `Key Vault`
+  - secretos de runtime y bootstrap
+- `User Assigned Managed Identity`
+  - identidad usada por `Container Apps` para leer secretos
+- `Role Assignments`
+  - lectura de secretos para la app
+  - escritura de secretos para el despliegue
+- `PostgreSQL Flexible Server`
+  - persistencia principal del sistema
+- `PostgreSQL Database`
+  - base `ti_garantias`
+- `Firewall Rule`
+  - habilita acceso desde servicios Azure
+- `Storage Account`
+  - base para adjuntos persistentes
+- `Storage Share`
+  - file share `attachments`
+- `Container App Environment Storage`
+  - enlaza `Azure Files` al entorno de `Container Apps`
+- `Container App Environment`
+  - entorno aislado donde viven frontend y backend
+
+Lectura recomendada del modulo:
+
+- primero crea secretos, identidad, base de datos y almacenamiento
+- despues crea el entorno de ejecucion
+- finalmente despliega las apps y conecta sus dependencias
+
 ## Operacion basica
 
 Comandos utiles para revisar salud del ambiente:
