@@ -34,7 +34,7 @@ pipeline {
           script {
             def version = readFile('VERSION').trim()
             def shortSha = env.GIT_COMMIT.take(7)
-            def isUserTriggered = currentBuild.rawBuild.getCause(hudson.model.Cause.UserIdCause) != null
+            def isUserTriggered = !currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause').isEmpty()
             def isAutomaticMainBuild = env.BRANCH_NAME == 'main' && !isUserTriggered
             def isAutomaticBranchBuild = env.BRANCH_NAME != 'main' && !isUserTriggered
             def requestedNamespace = params.REGISTRY_NAMESPACE?.trim()
