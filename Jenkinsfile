@@ -30,13 +30,38 @@ pipeline {
 
     stage('Resolve metadata') {
       steps {
-        script {
-          def version = readFile('VERSION').trim()
-          def shortSha = env.GIT_COMMIT.take(7)
-          env.EFFECTIVE_IMAGE_TAG = params.IMAGE_TAG?.trim() ? params.IMAGE_TAG.trim() : "v${version}-${shortSha}"
-          env.BACKEND_IMAGE = "${params.REGISTRY_SERVER}/${params.REGISTRY_NAMESPACE}/ti-garantias-backend:${env.EFFECTIVE_IMAGE_TAG}"
-          env.FRONTEND_IMAGE = "${params.REGISTRY_SERVER}/${params.REGISTRY_NAMESPACE}/ti-garantias-frontend:${env.EFFECTIVE_IMAGE_TAG}"
-          env.TF_ROOT = "infra/terraform/env/${params.ENVIRONMENT}"
+        withCredentials([usernamePassword(credentialsId: 'ti-garantias-registry', usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD')]) {
+          script {
+            def version = readFile('VERSION').trim()
+            def shortSha = env.GIT_COMMIT.take(7)
+            def isUserTriggered = currentBuild.rawBuild.getCause(hudson.model.Cause.UserIdCause) != null
+            def isAutomaticMainBuild = env.BRANCH_NAME == 'main' && !isUserTriggered
+            def isAutomaticBranchBuild = env.BRANCH_NAME != 'main' && !isUserTriggered
+            def requestedNamespace = params.REGISTRY_NAMESPACE?.trim()
+
+            env.EFFECTIVE_ENVIRONMENT = isAutomaticMainBuild ? 'dev' : params.ENVIRONMENT
+            env.EFFECTIVE_TERRAFORM_ACTION = isAutomaticMainBuild
+              ? 'apply'
+              : isAutomaticBranchBuild
+                ? 'plan'
+                : params.TERRAFORM_ACTION
+            env.EFFECTIVE_PUSH_IMAGES = isAutomaticMainBuild
+              ? 'true'
+              : isAutomaticBranchBuild
+                ? 'false'
+                : params.PUSH_IMAGES.toString()
+            env.EFFECTIVE_ENABLE_CD = (isAutomaticMainBuild || isUserTriggered) ? 'true' : 'false'
+            env.EFFECTIVE_REGISTRY_SERVER = params.REGISTRY_SERVER?.trim() ? params.REGISTRY_SERVER.trim() : 'docker.io'
+            env.EFFECTIVE_REGISTRY_NAMESPACE = requestedNamespace && requestedNamespace != 'tu-usuario'
+              ? requestedNamespace
+              : REGISTRY_USERNAME
+            env.EFFECTIVE_IMAGE_TAG = params.IMAGE_TAG?.trim() ? params.IMAGE_TAG.trim() : "v${version}-${shortSha}"
+            env.BACKEND_IMAGE = "${env.EFFECTIVE_REGISTRY_SERVER}/${env.EFFECTIVE_REGISTRY_NAMESPACE}/ti-garantias-backend:${env.EFFECTIVE_IMAGE_TAG}"
+            env.FRONTEND_IMAGE = "${env.EFFECTIVE_REGISTRY_SERVER}/${env.EFFECTIVE_REGISTRY_NAMESPACE}/ti-garantias-frontend:${env.EFFECTIVE_IMAGE_TAG}"
+            env.TF_ROOT = "infra/terraform/env/${env.EFFECTIVE_ENVIRONMENT}"
+
+            currentBuild.description = "branch=${env.BRANCH_NAME} env=${env.EFFECTIVE_ENVIRONMENT} action=${env.EFFECTIVE_TERRAFORM_ACTION} push=${env.EFFECTIVE_PUSH_IMAGES}"
+          }
         }
       }
     }
@@ -84,13 +109,13 @@ pipeline {
 
     stage('Build and push images') {
       when {
-        expression { return params.PUSH_IMAGES }
+        expression { return env.EFFECTIVE_PUSH_IMAGES == 'true' }
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'ti-garantias-registry', usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD')]) {
           sh '''
             set -euo pipefail
-            printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_SERVER" -u "$REGISTRY_USERNAME" --password-stdin
+            printf '%s' "$REGISTRY_PASSWORD" | docker login "$EFFECTIVE_REGISTRY_SERVER" -u "$REGISTRY_USERNAME" --password-stdin
             docker build -t "$BACKEND_IMAGE" backend
             docker build -t "$FRONTEND_IMAGE" frontend
             docker push "$BACKEND_IMAGE"
@@ -101,6 +126,9 @@ pipeline {
     }
 
     stage('Terraform init') {
+      when {
+        expression { return env.EFFECTIVE_ENABLE_CD == 'true' }
+      }
       steps {
         dir("${env.TF_ROOT}") {
           withCredentials([
@@ -115,7 +143,7 @@ pipeline {
                 -backend-config="resource_group_name=$TFSTATE_RESOURCE_GROUP" \
                 -backend-config="storage_account_name=$TFSTATE_STORAGE_ACCOUNT" \
                 -backend-config="container_name=$TFSTATE_CONTAINER" \
-                -backend-config="key=ti-garantias-${ENVIRONMENT}.tfstate"
+                -backend-config="key=ti-garantias-${EFFECTIVE_ENVIRONMENT}.tfstate"
             '''
           }
         }
@@ -123,6 +151,9 @@ pipeline {
     }
 
     stage('Bootstrap Key Vault secrets') {
+      when {
+        expression { return env.EFFECTIVE_ENABLE_CD == 'true' && env.EFFECTIVE_TERRAFORM_ACTION == 'apply' }
+      }
       steps {
         dir("${env.TF_ROOT}") {
           withCredentials([
@@ -130,9 +161,9 @@ pipeline {
             string(credentialsId: 'azure-client-secret', variable: 'ARM_CLIENT_SECRET'),
             string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID'),
             string(credentialsId: 'azure-tenant-id', variable: 'ARM_TENANT_ID'),
-            string(credentialsId: "ti-garantias-${params.ENVIRONMENT}-pg-admin-password", variable: 'TF_VAR_postgresql_admin_password'),
-            string(credentialsId: "ti-garantias-${params.ENVIRONMENT}-jwt-secret", variable: 'TF_VAR_jwt_secret'),
-            string(credentialsId: "ti-garantias-${params.ENVIRONMENT}-unique-suffix", variable: 'TF_VAR_unique_suffix'),
+            string(credentialsId: "ti-garantias-${env.EFFECTIVE_ENVIRONMENT}-pg-admin-password", variable: 'TF_VAR_postgresql_admin_password'),
+            string(credentialsId: "ti-garantias-${env.EFFECTIVE_ENVIRONMENT}-jwt-secret", variable: 'TF_VAR_jwt_secret'),
+            string(credentialsId: "ti-garantias-${env.EFFECTIVE_ENVIRONMENT}-unique-suffix", variable: 'TF_VAR_unique_suffix'),
             usernamePassword(credentialsId: 'ti-garantias-registry', usernameVariable: 'REGISTRY_USERNAME', passwordVariable: 'REGISTRY_PASSWORD')
           ]) {
             sh '''
@@ -147,7 +178,7 @@ pipeline {
                 -target=module.stack.azurerm_postgresql_flexible_server_firewall_rule.azure_services \
                 -var="backend_image=$BACKEND_IMAGE" \
                 -var="frontend_image=$FRONTEND_IMAGE" \
-                -var="registry_server=$REGISTRY_SERVER" \
+                -var="registry_server=$EFFECTIVE_REGISTRY_SERVER" \
                 -var="registry_username=$REGISTRY_USERNAME" \
                 -var="enable_key_vault_secret_references=false"
 
@@ -179,6 +210,9 @@ pipeline {
     }
 
     stage('Terraform plan/apply') {
+      when {
+        expression { return env.EFFECTIVE_ENABLE_CD == 'true' }
+      }
       steps {
         dir("${env.TF_ROOT}") {
           withCredentials([
@@ -186,9 +220,9 @@ pipeline {
             string(credentialsId: 'azure-client-secret', variable: 'ARM_CLIENT_SECRET'),
             string(credentialsId: 'azure-subscription-id', variable: 'ARM_SUBSCRIPTION_ID'),
             string(credentialsId: 'azure-tenant-id', variable: 'ARM_TENANT_ID'),
-            string(credentialsId: "ti-garantias-${params.ENVIRONMENT}-pg-admin-password", variable: 'TF_VAR_postgresql_admin_password'),
-            string(credentialsId: "ti-garantias-${params.ENVIRONMENT}-jwt-secret", variable: 'TF_VAR_jwt_secret'),
-            string(credentialsId: "ti-garantias-${params.ENVIRONMENT}-unique-suffix", variable: 'TF_VAR_unique_suffix'),
+            string(credentialsId: "ti-garantias-${env.EFFECTIVE_ENVIRONMENT}-pg-admin-password", variable: 'TF_VAR_postgresql_admin_password'),
+            string(credentialsId: "ti-garantias-${env.EFFECTIVE_ENVIRONMENT}-jwt-secret", variable: 'TF_VAR_jwt_secret'),
+            string(credentialsId: "ti-garantias-${env.EFFECTIVE_ENVIRONMENT}-unique-suffix", variable: 'TF_VAR_unique_suffix'),
             usernamePassword(credentialsId: 'ti-garantias-registry', usernameVariable: 'TF_VAR_registry_username', passwordVariable: 'TF_VAR_registry_password')
           ]) {
             sh '''
@@ -196,12 +230,12 @@ pipeline {
               terraform plan \
                 -var="backend_image=$BACKEND_IMAGE" \
                 -var="frontend_image=$FRONTEND_IMAGE" \
-                -var="registry_server=$REGISTRY_SERVER" \
+                -var="registry_server=$EFFECTIVE_REGISTRY_SERVER" \
                 -out=tfplan
             '''
             script {
-              if (params.TERRAFORM_ACTION == 'apply') {
-                if (params.ENVIRONMENT == 'prod') {
+              if (env.EFFECTIVE_TERRAFORM_ACTION == 'apply') {
+                if (env.EFFECTIVE_ENVIRONMENT == 'prod') {
                   input message: 'Confirmar despliegue a prod', ok: 'Desplegar'
                 }
                 sh '''

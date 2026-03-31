@@ -26,6 +26,41 @@ Esa imagen trae:
 - `.NET SDK 8`
 - `git` y utilitarios base
 
+## Alcance del `docker-compose`
+
+El archivo [deploy/docker-compose.yml](/e:/DMC/garantias-integrador/ti-garantias/deploy/docker-compose.yml) ya concentra tres usos del proyecto:
+
+- aplicacion completa local
+- monitoreo con `Prometheus`, `Grafana`, `Loki`, `Promtail` y `cAdvisor`
+- `Jenkins` como runner de CD bajo el perfil `ci`
+
+Servicios principales:
+
+- `db`
+  - base PostgreSQL local para desarrollo y pruebas manuales
+- `backend`
+  - API ASP.NET Core con montaje persistente para adjuntos
+- `frontend`
+  - SPA servida por `nginx` con proxy al backend
+- `prometheus`
+  - recolector de metricas para stack local o cloud segun `PROMETHEUS_CONFIG_PATH`
+- `cadvisor`
+  - metricas de contenedores Docker de la VM o del host local
+- `grafana`
+  - visualizacion de metricas y logs
+- `loki`
+  - almacenamiento de logs del stack Docker observado por `promtail`
+- `promtail`
+  - descubrimiento y envio de logs de contenedores Docker
+- `jenkins`
+  - runner de CI/CD construido desde `deploy/jenkins/Dockerfile`
+
+Reglas practicas de uso:
+
+- para desarrollo local se levantan `db`, `backend` y `frontend`
+- para observabilidad local o cloud se agregan `prometheus`, `grafana`, `loki`, `promtail` y `cadvisor`
+- para CD en Azure se levanta `jenkins` con `--profile ci`
+
 ## Como levantar Jenkins en la VM
 
 Una vez creada la VM:
