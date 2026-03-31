@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models';
+import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models';
 
 @Component({
   selector: 'app-invoices-page',
@@ -23,11 +23,24 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
       <mat-card>
         <h2>{{ title }}</h2>
         <form [formGroup]="form" (ngSubmit)="saveInvoice()">
-          <mat-form-field appearance="outline"><mat-label>Proveedor</mat-label><mat-select formControlName="supplierId"><mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option></mat-select></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Contrato</mat-label><mat-select formControlName="contractId"><mat-option *ngFor="let item of filteredContracts()" [value]="item.id">{{ item.title }}</mat-option></mat-select></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Factura</mat-label><input matInput formControlName="invoiceNumber" placeholder="999-999-999999999" /></mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Fecha factura</mat-label>
+            <mat-label>Proveedor</mat-label>
+            <mat-select formControlName="supplierId">
+              <mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Contrato</mat-label>
+            <mat-select formControlName="contractId">
+              <mat-option *ngFor="let item of filteredContracts()" [value]="item.id">{{ contractLabel(item) }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Factura</mat-label>
+            <input matInput formControlName="invoiceNumber" placeholder="999-999-999999999" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha inicio</mat-label>
             <input
               matInput
               [matDatepicker]="invoiceDatePicker"
@@ -36,31 +49,39 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
             <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker"></mat-datepicker-toggle>
             <mat-datepicker #invoiceDatePicker></mat-datepicker>
             <mat-error *ngIf="form.controls.invoiceDate.hasError('required')">
-              La fecha de factura es obligatoria.
+              La fecha de inicio es obligatoria.
             </mat-error>
             <mat-error *ngIf="form.controls.invoiceDate.hasError('matDatepickerParse') || form.controls.invoiceDate.hasError('invalidDate')">
               Ingresa una fecha valida en formato AAAA-MM-DD o DD/MM/AAAA, o seleccionala en el calendario.
             </mat-error>
           </mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Valor factura</mat-label><input matInput type="number" formControlName="invoiceAmount" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>OC</mat-label><input matInput formControlName="purchaseOrder" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Valor retenido</mat-label><input matInput type="number" formControlName="retainedAmount" /></mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Fecha estimada devolución</mat-label>
-            <input
-              matInput
-              [matDatepicker]="estimatedRefundDatePicker"
-              formControlName="estimatedRefundDate"
-              placeholder="AAAA-MM-DD o DD/MM/AAAA" />
-            <mat-datepicker-toggle matIconSuffix [for]="estimatedRefundDatePicker"></mat-datepicker-toggle>
-            <mat-datepicker #estimatedRefundDatePicker></mat-datepicker>
-            <mat-error *ngIf="form.controls.estimatedRefundDate.hasError('matDatepickerParse') || form.controls.estimatedRefundDate.hasError('invalidDate')">
-              Ingresa una fecha valida en formato AAAA-MM-DD o DD/MM/AAAA, o seleccionala en el calendario.
-            </mat-error>
+            <mat-label>Fecha vencimiento</mat-label>
+            <input matInput formControlName="estimatedRefundDate" readonly />
           </mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Entregables</mat-label><mat-select formControlName="deliverableIds" multiple><mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option></mat-select></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Valor factura</mat-label>
+            <input matInput type="number" formControlName="invoiceAmount" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>OC</mat-label>
+            <input matInput formControlName="purchaseOrder" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Valor retenido</mat-label>
+            <input matInput type="number" formControlName="retainedAmount" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Entregables</mat-label>
+            <mat-select formControlName="deliverableIds" multiple>
+              <mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
           <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
-          <button mat-flat-button color="primary" type="submit">Guardar factura</button>
+          <div class="form-actions">
+            <button mat-flat-button color="primary" type="submit">{{ submitLabel() }}</button>
+            <button mat-stroked-button type="button" *ngIf="editingInvoiceId()" (click)="cancelEdit()">Cancelar edición</button>
+          </div>
         </form>
 
         <table>
@@ -69,7 +90,8 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
               <th>Factura</th>
               <th>Proveedor</th>
               <th>Contrato</th>
-              <th>Fecha</th>
+              <th>Fecha inicio</th>
+              <th>Fecha vencimiento</th>
               <th>OC</th>
               <th>Retenido</th>
               <th>Estado</th>
@@ -82,14 +104,16 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
             <tr *ngFor="let item of invoices()">
               <td>{{ item.invoiceNumber }}</td>
               <td>{{ item.supplierName }}</td>
-              <td>{{ item.contractTitle }}</td>
+              <td>{{ invoiceContractLabel(item) }}</td>
               <td>{{ item.invoiceDate }}</td>
+              <td>{{ item.estimatedRefundDate || 'Pendiente' }}</td>
               <td>{{ item.purchaseOrder || 'Sin OC' }}</td>
               <td>{{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</td>
               <td>{{ item.status }}</td>
               <td>{{ item.refundManagerName || 'Sin asignar' }}</td>
               <td>{{ item.attachments.length }}</td>
               <td class="actions">
+                <button mat-stroked-button type="button" (click)="startEdit(item)">Editar</button>
                 <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
                 <label class="upload-action">
                   <span>Adjuntar</span>
@@ -98,7 +122,7 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
               </td>
             </tr>
             <tr *ngIf="!invoices().length">
-              <td colspan="10" class="empty">No hay registros para mostrar.</td>
+              <td colspan="11" class="empty">No hay registros para mostrar.</td>
             </tr>
           </tbody>
         </table>
@@ -112,9 +136,10 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
           <div class="cards">
             <article class="invoice" *ngFor="let item of invoices()">
               <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
-              <p>{{ item.supplierName }} / {{ item.contractTitle }}</p>
-              <p>Fecha factura: {{ item.invoiceDate }} · OC: {{ item.purchaseOrder || 'Sin OC' }}</p>
-              <p>Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }} · Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
+              <p>{{ item.supplierName }} / {{ invoiceContractLabel(item) }}</p>
+              <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
+              <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
+              <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
               <div class="attachments" *ngIf="item.attachments.length; else noAttachments">
                 <strong>Adjuntos</strong>
                 <button *ngFor="let attachment of item.attachments"
@@ -134,24 +159,94 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
       </ng-container>
 
       <ng-template #managedLayout>
-      <section class="grid">
-        <mat-card>
-          <h2>Listado</h2>
-          <div class="cards">
-            <article class="invoice" *ngFor="let item of invoices()">
-              <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
-              <p>{{ item.supplierName }} / {{ item.contractTitle }}</p>
-              <p>OC: {{ item.purchaseOrder }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
-              <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
-              <div class="actions">
-                <button mat-stroked-button *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
-                <input type="file" (change)="upload(item.id, $event)" />
+        <section class="grid">
+          <mat-card class="editor" *ngIf="canEditInvoices; else managedHelp">
+            <h2>{{ editingInvoiceId() ? 'Completar datos de factura' : 'Selecciona una factura' }}</h2>
+            <form [formGroup]="form" (ngSubmit)="saveInvoice()">
+              <mat-form-field appearance="outline">
+                <mat-label>Proveedor</mat-label>
+                <mat-select formControlName="supplierId">
+                  <mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Contrato</mat-label>
+                <mat-select formControlName="contractId">
+                  <mat-option *ngFor="let item of filteredContracts()" [value]="item.id">{{ contractLabel(item) }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Factura</mat-label>
+                <input matInput formControlName="invoiceNumber" placeholder="999-999-999999999" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha inicio</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="managedInvoiceDatePicker"
+                  formControlName="invoiceDate"
+                  placeholder="AAAA-MM-DD o DD/MM/AAAA" />
+                <mat-datepicker-toggle matIconSuffix [for]="managedInvoiceDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #managedInvoiceDatePicker></mat-datepicker>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha vencimiento</mat-label>
+                <input matInput formControlName="estimatedRefundDate" readonly />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Valor factura</mat-label>
+                <input matInput type="number" formControlName="invoiceAmount" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>OC</mat-label>
+                <input matInput formControlName="purchaseOrder" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Valor retenido</mat-label>
+                <input matInput type="number" formControlName="retainedAmount" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Entregables</mat-label>
+                <mat-select formControlName="deliverableIds" multiple>
+                  <mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
+              <div class="form-actions">
+                <button mat-flat-button color="primary" type="submit" [disabled]="!editingInvoiceId()">Guardar cambios</button>
+                <button mat-stroked-button type="button" *ngIf="editingInvoiceId()" (click)="cancelEdit()">Cancelar</button>
               </div>
-              <small *ngIf="item.attachments.length">Adjuntos: {{ item.attachments.length }}</small>
-            </article>
-          </div>
-        </mat-card>
-      </section>
+            </form>
+          </mat-card>
+          <ng-template #managedHelp>
+            <mat-card>
+              <p>Selecciona una factura para completar sus datos.</p>
+            </mat-card>
+          </ng-template>
+
+          <mat-card>
+            <h2>{{ title }}</h2>
+            <div class="cards">
+              <article class="invoice" *ngFor="let item of invoices()">
+                <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
+                <p>{{ item.supplierName }} / {{ invoiceContractLabel(item) }}</p>
+                <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
+                <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
+                <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
+                <div class="actions">
+                  <button mat-stroked-button type="button" (click)="startEdit(item)">Completar datos</button>
+                  <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
+                  <label class="upload-action">
+                    <span>Adjuntar</span>
+                    <input type="file" (change)="upload(item.id, $event)" />
+                  </label>
+                </div>
+                <small *ngIf="item.attachments.length">Adjuntos: {{ item.attachments.length }}</small>
+              </article>
+              <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
+            </div>
+          </mat-card>
+        </section>
       </ng-template>
     </ng-template>
   `,
@@ -161,6 +256,8 @@ import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .form-actions { display: flex; gap: 8px; align-items: center; }
+    .editor { align-self: start; }
     .upload-action { position: relative; display: inline-flex; align-items: center; border: 1px solid #8a8a8a; border-radius: 20px; padding: 6px 12px; cursor: pointer; font: inherit; }
     .upload-action input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .empty { text-align: center; color: #666; }
@@ -187,10 +284,12 @@ export class InvoicesPageComponent {
   readonly contracts = signal<ContractItem[]>([]);
   readonly deliverables = signal<Deliverable[]>([]);
   readonly invoices = signal<InvoiceItem[]>([]);
+  readonly editingInvoiceId = signal<string | null>(null);
   readonly scope = this.route.snapshot.data['scope'] as string ?? 'all';
   readonly title = this.scope === 'mine' ? 'Mis registros' : this.scope === 'managed' ? 'Pendientes por gestionar' : 'Facturas';
-  readonly canRegisterInvoices = this.auth.hasAnyRole(['Registrador', 'Admin']);
+  readonly canCreateInvoices = this.auth.hasAnyRole(['Registrador', 'Admin']);
   readonly canManageInvoices = this.auth.hasAnyRole(['Gestor', 'Admin']);
+  readonly canEditInvoices = this.auth.hasAnyRole(['Registrador', 'Gestor', 'Admin']);
 
   readonly form = this.fb.nonNullable.group({
     supplierId: ['', Validators.required],
@@ -201,11 +300,14 @@ export class InvoicesPageComponent {
     purchaseOrder: [''],
     retainedAmount: [0, Validators.required],
     guaranteeRefundable: [true],
-    estimatedRefundDate: [null as Date | string | null],
+    estimatedRefundDate: [''],
     deliverableIds: [[] as string[]]
   });
 
   constructor() {
+    this.form.controls.invoiceDate.valueChanges.subscribe(() => this.recalculateEstimatedRefundDate());
+    this.form.controls.guaranteeRefundable.valueChanges.subscribe(() => this.recalculateEstimatedRefundDate());
+    this.recalculateEstimatedRefundDate();
     this.reload();
   }
 
@@ -217,8 +319,43 @@ export class InvoicesPageComponent {
     return this.deliverables().filter(item => !this.form.value.contractId || item.contractId === this.form.value.contractId);
   }
 
+  contractLabel(item: ContractItem): string {
+    return `${item.contractNumber} - ${item.title}`;
+  }
+
+  invoiceContractLabel(item: InvoiceItem): string {
+    return `${item.contractNumber} - ${item.contractTitle}`;
+  }
+
+  submitLabel(): string {
+    return this.editingInvoiceId() ? 'Guardar cambios' : 'Guardar factura';
+  }
+
+  startEdit(item: InvoiceItem) {
+    this.editingInvoiceId.set(item.id);
+    this.form.reset({
+      supplierId: item.supplierId,
+      contractId: item.contractId,
+      invoiceNumber: item.invoiceNumber,
+      invoiceDate: this.parseDate(item.invoiceDate) ?? new Date(),
+      invoiceAmount: item.invoiceAmount,
+      purchaseOrder: item.purchaseOrder,
+      retainedAmount: item.retainedAmount,
+      guaranteeRefundable: item.guaranteeRefundable,
+      estimatedRefundDate: item.estimatedRefundDate ?? '',
+      deliverableIds: item.deliverableIds
+    }, { emitEvent: false });
+    this.recalculateEstimatedRefundDate();
+  }
+
+  cancelEdit() {
+    this.editingInvoiceId.set(null);
+    this.resetFormForCreate();
+  }
+
   saveInvoice() {
-    if (!this.canRegisterInvoices) {
+    const editingInvoiceId = this.editingInvoiceId();
+    if (editingInvoiceId ? !this.canEditInvoices : !this.canCreateInvoices) {
       return;
     }
 
@@ -226,6 +363,7 @@ export class InvoicesPageComponent {
       this.form.markAllAsTouched();
       return;
     }
+
     const rawValue = this.form.getRawValue();
     const invoiceDate = this.normalizeDateValue(rawValue.invoiceDate);
     const estimatedRefundDate = this.normalizeOptionalDateValue(rawValue.estimatedRefundDate);
@@ -236,19 +374,17 @@ export class InvoicesPageComponent {
       return;
     }
 
-    if (rawValue.estimatedRefundDate && !estimatedRefundDate) {
-      this.form.controls.estimatedRefundDate.setErrors({ invalidDate: true });
-      this.form.controls.estimatedRefundDate.markAsTouched();
-      return;
-    }
-
     this.api.saveInvoice({
       ...rawValue,
       invoiceDate,
       estimatedRefundDate
-    }).subscribe(() => {
-      this.form.patchValue({ invoiceNumber: '', invoiceAmount: 0, purchaseOrder: '', retainedAmount: 0, estimatedRefundDate: '', deliverableIds: [] });
-      this.form.controls.invoiceDate.setValue(new Date());
+    }, editingInvoiceId ?? undefined).subscribe(saved => {
+      if (editingInvoiceId) {
+        this.reload(saved.id);
+        return;
+      }
+
+      this.resetFormForCreate();
       this.reload();
     });
   }
@@ -259,14 +395,14 @@ export class InvoicesPageComponent {
     }
 
     const today = new Date().toISOString().slice(0, 10);
-    this.api.manageRefund(item.id, today).subscribe(() => this.reload());
+    this.api.manageRefund(item.id, today).subscribe(() => this.reload(item.id));
   }
 
   upload(id: string, event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.api.uploadAttachment(id, file).subscribe(() => this.reload());
+    this.api.uploadAttachment(id, file).subscribe(() => this.reload(id));
   }
 
   previewAttachment(attachmentId: string, fileName: string) {
@@ -286,11 +422,69 @@ export class InvoicesPageComponent {
     });
   }
 
-  private reload() {
+  private reload(preferredInvoiceId?: string) {
     this.api.getSuppliers().subscribe(data => this.suppliers.set(data));
     this.api.getContracts().subscribe(data => this.contracts.set(data));
     this.api.getDeliverables().subscribe(data => this.deliverables.set(data));
-    this.api.getInvoices(this.scope).subscribe(data => this.invoices.set(data));
+    this.api.getInvoices(this.scope).subscribe(data => {
+      this.invoices.set(data);
+
+      if (!data.length) {
+        this.cancelEdit();
+        return;
+      }
+
+      if (preferredInvoiceId) {
+        const preferredInvoice = data.find(item => item.id === preferredInvoiceId);
+        if (preferredInvoice) {
+          this.startEdit(preferredInvoice);
+          return;
+        }
+      }
+
+      if (this.scope === 'managed') {
+        this.startEdit(data[0]);
+      }
+    });
+  }
+
+  private recalculateEstimatedRefundDate() {
+    if (!this.form.controls.guaranteeRefundable.value) {
+      this.form.controls.estimatedRefundDate.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const normalizedStartDate = this.normalizeDateValue(this.form.controls.invoiceDate.value);
+    if (!normalizedStartDate) {
+      this.form.controls.estimatedRefundDate.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const startDate = this.parseDate(normalizedStartDate);
+    if (!startDate) {
+      this.form.controls.estimatedRefundDate.setValue('', { emitEvent: false });
+      return;
+    }
+
+    const dueDate = new Date(startDate);
+    dueDate.setDate(dueDate.getDate() + 90);
+    this.form.controls.estimatedRefundDate.setValue(this.formatDate(dueDate), { emitEvent: false });
+  }
+
+  private resetFormForCreate() {
+    this.form.reset({
+      supplierId: '',
+      contractId: '',
+      invoiceNumber: '',
+      invoiceDate: new Date(),
+      invoiceAmount: 0,
+      purchaseOrder: '',
+      retainedAmount: 0,
+      guaranteeRefundable: true,
+      estimatedRefundDate: '',
+      deliverableIds: []
+    }, { emitEvent: false });
+    this.recalculateEstimatedRefundDate();
   }
 
   private normalizeOptionalDateValue(value: Date | string | null): string | null {
@@ -321,6 +515,16 @@ export class InvoicesPageComponent {
     return this.isExactDateMatch(parsed, Number(slashMatch[3]), Number(slashMatch[2]), Number(slashMatch[1]))
       ? this.formatDate(parsed)
       : null;
+  }
+
+  private parseDate(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      return null;
+    }
+
+    const parsed = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return this.isExactDateMatch(parsed, Number(match[1]), Number(match[2]), Number(match[3])) ? parsed : null;
   }
 
   private isExactDateMatch(date: Date, year: number, month: number, day: number): boolean {

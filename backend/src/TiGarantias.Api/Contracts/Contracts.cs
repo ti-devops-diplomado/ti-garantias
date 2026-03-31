@@ -129,6 +129,7 @@ public sealed class InvoiceResponse
 {
     public Guid Id { get; set; }
     public Guid ContractId { get; set; }
+    public string ContractNumber { get; set; } = string.Empty;
     public string ContractTitle { get; set; } = string.Empty;
     public Guid SupplierId { get; set; }
     public string SupplierName { get; set; } = string.Empty;
