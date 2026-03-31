@@ -437,3 +437,26 @@ flowchart LR
 - `Jenkins` queda como CD parametrizado por ambiente, corriendo en una VM Linux de Azure.
 - El pipeline construye imagenes inmutables, las publica al registry, crea la base minima para secretos, sincroniza `Key Vault` y luego aplica Terraform.
 - `prod` tiene compuerta manual antes del `apply`.
+
+### Pipeline CI
+
+La validacion continua del repositorio queda separada del despliegue y corre en `GitHub Actions`.
+
+Controles principales de CI:
+
+- `Backend (.NET 8) - build & test`
+  - compila la API
+  - ejecuta pruebas automatizadas del backend
+- `Frontend (Angular) - build`
+  - instala dependencias con `npm ci`
+  - construye la aplicacion Angular
+- `Terraform - fmt & validate`
+  - verifica formato
+  - inicializa sin backend remoto
+  - valida los roots de Terraform
+
+Objetivo operativo:
+
+- detectar regresiones antes del merge
+- garantizar que `main` reciba cambios ya compilables
+- dejar a Jenkins enfocado en CD y no en validaciones basicas del repositorio
