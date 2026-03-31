@@ -47,6 +47,7 @@ export interface AttachmentItem {
 export interface InvoiceItem {
   id: string;
   contractId: string;
+  contractNumber: string;
   contractTitle: string;
   supplierId: string;
   supplierName: string;

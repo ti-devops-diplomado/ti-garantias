@@ -35,15 +35,16 @@ public sealed class InvoicesController(
             .Include(x => x.Attachments)
             .AsQueryable();
 
-        if (scope == "mine" && currentUserService.UserId.HasValue)
+        if (!currentUserService.Roles.Contains("Admin") && currentUserService.UserId.HasValue)
         {
             query = query.Where(x => x.CreatedByUserId == currentUserService.UserId.Value);
         }
 
-        if (scope == "managed" && currentUserService.UserId.HasValue)
+        if (scope == "managed")
         {
-            query = query.Where(x => x.RefundManagerUserId == currentUserService.UserId.Value
-                && (x.Status == InvoiceStatus.Por_Vencer || x.Status == InvoiceStatus.Vencida));
+            query = query.Where(x => x.GuaranteeRefundable
+                && x.Status != InvoiceStatus.Gestionada
+                && x.Status != InvoiceStatus.Cancelada);
         }
 
         var invoices = await query.OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
@@ -95,11 +96,16 @@ public sealed class InvoicesController(
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Registrador,Admin")]
+    [Authorize(Roles = "Registrador,Gestor,Admin")]
     public async Task<ActionResult<InvoiceResponse>> Update(Guid id, [FromBody] InvoiceRequest request, CancellationToken cancellationToken)
     {
         var invoice = await dbContext.Invoices.Include(x => x.InvoiceDeliverables).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (invoice is null) return NotFound();
+        if (!CanAccessInvoice(invoice)) return Forbid();
+
+        var contract = await dbContext.Contracts.SingleOrDefaultAsync(x => x.Id == request.ContractId, cancellationToken);
+        if (contract is null) return ValidationProblem("El contrato no existe.");
+        if (contract.SupplierId != request.SupplierId) return ValidationProblem("El contrato no corresponde al proveedor indicado.");
 
         var deliverables = await dbContext.Deliverables.Where(x => request.DeliverableIds.Contains(x.Id)).ToListAsync(cancellationToken);
         if (deliverables.Any(x => x.ContractId != request.ContractId))
@@ -136,6 +142,7 @@ public sealed class InvoicesController(
     {
         var invoice = await dbContext.Invoices.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (invoice is null) return NotFound();
+        if (!CanAccessInvoice(invoice)) return Forbid();
 
         invoice.RefundManagedDate = request.RefundManagedDate;
         invoice.RefundManagerUserId = currentUserService.UserId;
@@ -226,14 +233,7 @@ public sealed class InvoicesController(
 
     private bool CanAccessAttachment(Attachment attachment)
     {
-        if (!currentUserService.UserId.HasValue)
-        {
-            return false;
-        }
-
-        return attachment.Invoice.CreatedByUserId == currentUserService.UserId.Value
-            || attachment.Invoice.RefundManagerUserId == currentUserService.UserId.Value
-            || currentUserService.Roles.Contains("Admin");
+        return CanAccessInvoice(attachment.Invoice);
     }
 
     private static bool CanAccessScope(string? scope, IReadOnlyCollection<string> roles)
@@ -260,14 +260,25 @@ public sealed class InvoicesController(
         }
 
         return roles.Contains("Admin")
-            || invoice.CreatedByUserId == userId.Value
-            || invoice.RefundManagerUserId == userId.Value;
+            || invoice.CreatedByUserId == userId.Value;
+    }
+
+    private bool CanAccessInvoice(Invoice invoice)
+    {
+        if (!currentUserService.UserId.HasValue)
+        {
+            return false;
+        }
+
+        return currentUserService.Roles.Contains("Admin")
+            || invoice.CreatedByUserId == currentUserService.UserId.Value;
     }
 
     private static InvoiceResponse MapInvoice(Invoice invoice) => new()
     {
         Id = invoice.Id,
         ContractId = invoice.ContractId,
+        ContractNumber = invoice.Contract.ContractNumber,
         ContractTitle = invoice.Contract.Title,
         SupplierId = invoice.SupplierId,
         SupplierName = invoice.Supplier.Name,
