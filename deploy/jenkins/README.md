@@ -182,6 +182,12 @@ Y scrapea el endpoint:
 
 - `https://tigarantias-dev-fe.mangobay-9146375d.centralus.azurecontainerapps.io/metrics`
 
+Nota de alcance:
+
+- en esta fase `Prometheus` observa metricas del backend cloud a traves del frontend publico
+- `Loki` y `Promtail` siguen observando contenedores Docker de la VM compartida
+- los logs nativos de `Azure Container Apps` siguen consultandose en `Log Analytics`
+
 ### Validar resultado
 
 - revisar que el build termine exitoso en Jenkins
