@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1620" viewBox="0 0 1800 1620">
+  <defs>
+    <style>
+      .bg{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:12}
+      .sec{stroke:#94a3b8;stroke-width:2;rx:10}
+      .card{fill:#fff;stroke:#64748b;stroke-width:1.3;rx:8}
+      .h1{font:700 28px Arial,sans-serif;fill:#0f172a}
+      .h2{font:700 18px Arial,sans-serif;fill:#0f172a}
+      .tx{font:12px Arial,sans-serif;fill:#1f2937}
+      .ar{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#a)}
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect x="20" y="20" width="1760" height="1580" class="bg"/>
+  <text x="50" y="62" class="h1">Ti Garantias - Inventario Visual (v3)</text>
+  <text x="50" y="88" class="tx">Suscripcion: Suscripcion de Azure 1</text>
+
+  <rect x="50" y="110" width="1700" height="80" class="sec" fill="#e2e8f0"/>
+  <image href="icons/azure/subscription.svg" x="52" y="132" width="16" height="16"/>
+  <text x="70" y="143" class="h2">Suscripcion</text>
+  <text x="70" y="168" class="tx">Scope superior que contiene todos los Resource Groups listados abajo</text>
+
+  <rect x="50" y="220" width="1700" height="240" class="sec" fill="#ecfeff"/>
+  <text x="70" y="252" class="h2">RG: rg-ti-garantias-tfstate</text>
+  <rect x="80" y="280" width="520" height="150" class="card"/>
+  <image href="icons/azure/storage-account.svg" x="82" y="300" width="16" height="16"/>
+  <text x="98" y="314" class="tx">Microsoft.Storage/storageAccounts</text>
+  <text x="98" y="338" class="tx">sttigarantiastfstate01</text>
+  <text x="98" y="362" class="tx">Uso: terraform state</text>
+  <rect x="630" y="280" width="1080" height="150" class="card"/>
+  <text x="648" y="314" class="tx">Dependencias</text>
+  <text x="648" y="338" class="tx">- Jenkins pipeline consume este storage como backend remoto.</text>
+  <text x="648" y="362" class="tx">- No participa en trafico runtime de usuario.</text>
+
+  <rect x="50" y="480" width="1700" height="210" class="sec" fill="#f0fdf4"/>
+  <text x="70" y="512" class="h2">RG: NetworkWatcherRG</text>
+  <rect x="80" y="540" width="520" height="120" class="card"/>
+  <image href="icons/azure/network-watcher.svg" x="82" y="560" width="16" height="16"/>
+  <text x="98" y="574" class="tx">NetworkWatcher_eastus</text>
+  <text x="98" y="598" class="tx">Microsoft.Network/networkWatchers</text>
+  <rect x="630" y="540" width="520" height="120" class="card"/>
+  <image href="icons/azure/network-watcher.svg" x="632" y="560" width="16" height="16"/>
+  <text x="648" y="574" class="tx">NetworkWatcher_centralus</text>
+  <text x="648" y="598" class="tx">Microsoft.Network/networkWatchers</text>
+  <rect x="1180" y="540" width="530" height="120" class="card"/>
+  <text x="1198" y="574" class="tx">Rol: diagnostico de red / soporte operativo</text>
+
+  <rect x="50" y="710" width="1700" height="360" class="sec" fill="#fff7ed"/>
+  <text x="70" y="742" class="h2">RG: tigarantias-shared-rg</text>
+  <rect x="80" y="770" width="240" height="120" class="card"/><image href="icons/azure/virtual-network.svg" x="80" y="790" width="16" height="16"/><text x="96" y="806" class="tx">VNet</text><text x="96" y="830" class="tx">tigarantias-shared-vnet</text>
+  <rect x="340" y="770" width="240" height="120" class="card"/><image href="icons/azure/nsg.svg" x="340" y="790" width="16" height="16"/><text x="356" y="806" class="tx">NSG</text><text x="356" y="830" class="tx">tigarantias-jenkins-nsg</text>
+  <rect x="600" y="770" width="240" height="120" class="card"/><image href="icons/azure/public-ip.svg" x="600" y="790" width="16" height="16"/><text x="616" y="806" class="tx">Public IP</text><text x="616" y="830" class="tx">tigarantias-jenkins-pip</text>
+  <rect x="860" y="770" width="240" height="120" class="card"/><image href="icons/azure/nic.svg" x="860" y="790" width="16" height="16"/><text x="876" y="806" class="tx">NIC</text><text x="876" y="830" class="tx">tigarantias-jenkins-nic</text>
+  <rect x="1120" y="770" width="260" height="120" class="card"/><image href="icons/azure/vm.svg" x="1120" y="790" width="16" height="16"/><text x="1136" y="806" class="tx">VM</text><text x="1136" y="830" class="tx">tigarantias-jenkins-vm</text>
+  <rect x="1400" y="770" width="310" height="120" class="card"/><text x="1416" y="806" class="tx">Disk + Extension</text><text x="1416" y="830" class="tx">OsDisk + AADSSHLoginForLinux</text>
+  <rect x="80" y="910" width="1630" height="130" class="card"/>
+  <text x="98" y="944" class="tx">Servicios en VM (contenedores): ti-garantias-grafana, ti-garantias-prometheus, ti-garantias-loki</text>
+  <text x="98" y="968" class="tx">Tambien: ti-garantias-promtail, ti-garantias-cadvisor (logs y metricas del host/contenedores)</text>
+  <text x="98" y="992" class="tx">Puertos NSG: 22, 8080, 3000, 9090 | IP privada 10.40.1.4 | IP publica 74.249.157.233</text>
+  <text x="98" y="1016" class="tx">Pipeline Jenkins consume Docker Hub y Terraform para actualizar recursos de dev.</text>
+
+  <rect x="50" y="1090" width="1700" height="340" class="sec" fill="#eff6ff"/>
+  <text x="70" y="1122" class="h2">RG: tigarantias-dev-rg</text>
+  <rect x="80" y="1150" width="220" height="110" class="card"/><image href="icons/azure/managed-identity.svg" x="80" y="1168" width="16" height="16"/><text x="96" y="1184" class="tx">Managed Identity</text><text x="96" y="1208" class="tx">tigarantias-dev-ca-mi</text>
+  <rect x="320" y="1150" width="220" height="110" class="card"/><image href="icons/azure/key-vault.svg" x="320" y="1168" width="16" height="16"/><text x="336" y="1184" class="tx">Key Vault</text><text x="336" y="1208" class="tx">tigarantiasdevtgd1kv</text>
+  <rect x="560" y="1150" width="220" height="110" class="card"/><image href="icons/azure/storage-account.svg" x="560" y="1168" width="16" height="16"/><text x="576" y="1184" class="tx">Storage</text><text x="576" y="1208" class="tx">tigarantiasdevtgd1st</text>
+  <rect x="800" y="1150" width="220" height="110" class="card"/><image href="icons/azure/log-analytics.svg" x="800" y="1168" width="16" height="16"/><text x="816" y="1184" class="tx">Log Analytics</text><text x="816" y="1208" class="tx">tigarantias-dev-law</text>
+  <rect x="1040" y="1150" width="220" height="110" class="card"/><image href="icons/azure/container-app-env.svg" x="1040" y="1168" width="16" height="16"/><text x="1056" y="1184" class="tx">Managed Env</text><text x="1056" y="1208" class="tx">tigarantias-dev-cae</text>
+  <rect x="1280" y="1150" width="220" height="110" class="card"/><image href="icons/azure/container-app.svg" x="1280" y="1168" width="16" height="16"/><text x="1296" y="1184" class="tx">Container App FE</text><text x="1296" y="1208" class="tx">tigarantias-dev-fe</text>
+  <rect x="1520" y="1150" width="190" height="110" class="card"/><image href="icons/azure/container-app.svg" x="1520" y="1168" width="16" height="16"/><text x="1536" y="1184" class="tx">Container App BE</text><text x="1536" y="1208" class="tx">tigarantias-dev-be</text>
+  <rect x="80" y="1280" width="700" height="120" class="card"/>
+  <image href="icons/azure/postgresql.svg" x="80" y="1298" width="16" height="16"/>
+  <text x="98" y="1314" class="tx">PostgreSQL Flexible Server: tigarantias-dev-pg-tgd1</text>
+  <text x="98" y="1338" class="tx">Cadena principal: FE -> BE -> PostgreSQL</text>
+  <rect x="800" y="1280" width="910" height="120" class="card"/>
+  <text x="818" y="1314" class="tx">Control: MI -> KV -> secretos para BE/FE, CAE -> LAW (logs)</text>
+  <text x="818" y="1338" class="tx">Docker Hub suministra imagenes para despliegue de Container Apps</text>
+
+  <!-- Minimal clear links -->
+  <path d="M600 355 L630 355" class="ar"/>
+  <path d="M1150 600 L1180 600" class="ar"/>
+  <path d="M1380 830 L1400 830" class="ar"/>
+  <path d="M1260 1208 L1280 1208" class="ar"/>
+  <path d="M1500 1208 L1520 1208" class="ar"/>
+
+  <rect x="50" y="1460" width="1700" height="120" class="card"/>
+  <text x="70" y="1494" class="h2">Leyenda Informativa</text>
+  <text x="70" y="1518" class="tx">Cada bloque representa un Resource Group y sus recursos listados.</text>
+  <text x="70" y="1542" class="tx">Flechas: relaciones principales detectadas entre recursos.</text>
+  <text x="70" y="1566" class="tx">Uso recomendado: inventario tecnico y validacion de alcance por RG.</text>
+
+</svg>

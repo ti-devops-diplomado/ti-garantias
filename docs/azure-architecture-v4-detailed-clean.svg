@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1600" viewBox="0 0 2100 1600">
+  <defs>
+    <style>
+      .bg{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:12}
+      .sec{stroke:#94a3b8;stroke-width:2;rx:10}
+      .box{fill:#fff;stroke:#64748b;stroke-width:1.4;rx:8}
+      .h1{font:700 30px Arial,sans-serif;fill:#0f172a}
+      .h2{font:700 20px Arial,sans-serif;fill:#0f172a}
+      .h3{font:700 14px Arial,sans-serif;fill:#0f172a}
+      .tx{font:12px Arial,sans-serif;fill:#1f2937}
+      .d{stroke:#1d4ed8;stroke-width:2.3;fill:none;marker-end:url(#d)}
+      .c{stroke:#0f766e;stroke-width:2.2;stroke-dasharray:7 6;fill:none;marker-end:url(#c)}
+      .o{stroke:#7c3aed;stroke-width:2.2;stroke-dasharray:4 4;fill:none;marker-end:url(#o)}
+      .p{stroke:#b45309;stroke-width:2.2;fill:none;marker-end:url(#p)}
+    </style>
+    <marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1d4ed8"/></marker>
+    <marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#0f766e"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7c3aed"/></marker>
+    <marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#b45309"/></marker>
+  </defs>
+
+  <rect x="20" y="20" width="2060" height="1560" class="bg"/>
+  <text x="50" y="70" class="h1">Ti Garantias - Arquitectura Full Detail (v4, clean routing)</text>
+  <text x="50" y="96" class="tx">Rutas por bus dedicados (principales): DATA (y=407), CONTROL (y=727), OBS (y=1042), CICD (y=1300)</text>
+
+  <rect x="50" y="120" width="2000" height="150" class="sec" fill="#eef2ff"/>
+  <image href="icons/azure/subscription.svg" x="52" y="136" width="16" height="16"/>
+  <text x="70" y="152" class="h2">Suscripcion y catalogo de Resource Groups</text>
+  <text x="70" y="182" class="tx">Suscripcion de Azure 1 -> rg-ti-garantias-tfstate, NetworkWatcherRG, tigarantias-shared-rg, tigarantias-dev-rg</text>
+  <text x="70" y="208" class="tx">No aparece tigarantias-test-rg en la lectura actual.</text>
+  <text x="70" y="234" class="tx">Shared contiene Jenkins VM y red; Dev contiene runtime de app y dependencias.</text>
+
+  <rect x="50" y="290" width="2000" height="300" class="sec" fill="#eff6ff"/>
+  <text x="70" y="322" class="h2">Runtime (app)</text>
+  <rect x="90" y="360" width="260" height="95" class="box"/><text x="108" y="392" class="h3">Users</text><text x="108" y="414" class="tx">browser / internet</text>
+  <rect x="400" y="360" width="320" height="95" class="box"/><image href="icons/azure/container-app.svg" x="400" y="376" width="16" height="16"/><text x="418" y="392" class="h3">Frontend CA</text><text x="418" y="414" class="tx">tigarantias-dev-fe :80 public</text>
+  <rect x="770" y="360" width="320" height="95" class="box"/><image href="icons/azure/container-app.svg" x="770" y="376" width="16" height="16"/><text x="788" y="392" class="h3">Backend CA</text><text x="788" y="414" class="tx">tigarantias-dev-be :8080 internal</text>
+  <rect x="1140" y="360" width="300" height="95" class="box"/><image href="icons/azure/postgresql.svg" x="1140" y="376" width="16" height="16"/><text x="1158" y="392" class="h3">PostgreSQL</text><text x="1158" y="414" class="tx">tigarantias-dev-pg-tgd1</text>
+  <rect x="1490" y="360" width="520" height="95" class="box"/><text x="1508" y="392" class="h3">Domain endpoint</text><text x="1508" y="414" class="tx">FE FQDN azurecontainerapps.io</text>
+
+  <path d="M350 407 L400 407" class="d"/>
+  <path d="M720 407 L770 407" class="d"/>
+  <path d="M1090 407 L1140 407" class="d"/>
+  <path d="M1490 382 L1490 340 L720 340 L720 382" class="d"/>
+  <text x="520" y="398" class="tx">/api proxy</text>
+  <text x="900" y="398" class="tx">DB calls</text>
+
+  <rect x="50" y="610" width="2000" height="300" class="sec" fill="#ecfeff"/>
+  <text x="70" y="642" class="h2">Security and secrets</text>
+  <rect x="350" y="680" width="320" height="95" class="box"/><image href="icons/azure/managed-identity.svg" x="350" y="696" width="16" height="16"/><text x="368" y="712" class="h3">Managed Identity</text><text x="368" y="734" class="tx">tigarantias-dev-ca-mi</text>
+  <rect x="760" y="680" width="360" height="95" class="box"/><image href="icons/azure/key-vault.svg" x="760" y="696" width="16" height="16"/><text x="778" y="712" class="h3">Key Vault</text><text x="778" y="734" class="tx">conn-string / jwt / registry</text>
+  <rect x="1210" y="680" width="360" height="95" class="box"/><text x="1228" y="712" class="h3">Container Apps secretRef</text><text x="1228" y="734" class="tx">aplicado en FE y BE</text>
+  <rect x="1660" y="680" width="350" height="95" class="box"/><text x="1678" y="712" class="h3">Registry auth secret</text><text x="1678" y="734" class="tx">docker.io password via KV</text>
+
+  <path d="M670 727 L760 727" class="c"/>
+  <path d="M1120 727 L1210 727" class="c"/>
+  <path d="M1570 727 L1660 727" class="c"/>
+  <path d="M1330 680 L1330 620 L930 620 L930 455" class="c"/>
+  <path d="M1390 680 L1390 580 L560 580 L560 455" class="c"/>
+  <text x="980" y="600" class="tx">to BE/FE</text>
+
+  <rect x="50" y="930" width="2000" height="230" class="sec" fill="#f5f3ff"/>
+  <text x="70" y="962" class="h2">Observability</text>
+  <rect x="540" y="995" width="360" height="95" class="box"/><image href="icons/azure/container-app-env.svg" x="540" y="1011" width="16" height="16"/><text x="558" y="1027" class="h3">Managed Environment</text><text x="558" y="1049" class="tx">tigarantias-dev-cae</text>
+  <rect x="980" y="995" width="360" height="95" class="box"/><image href="icons/azure/log-analytics.svg" x="980" y="1011" width="16" height="16"/><text x="998" y="1027" class="h3">Log Analytics Workspace</text><text x="998" y="1049" class="tx">tigarantias-dev-law</text>
+  <rect x="1420" y="995" width="590" height="95" class="box"/><text x="1438" y="1027" class="h3">VM monitoring stack (shared-rg)</text><text x="1438" y="1049" class="tx">ti-garantias-grafana(3000), ti-garantias-prometheus(9090), ti-garantias-loki</text><text x="1438" y="1071" class="tx">ti-garantias-promtail + ti-garantias-cadvisor (logs y metricas)</text>
+
+  <path d="M900 1042 L980 1042" class="o"/>
+  <path d="M680 995 L680 455" class="o"/>
+  <path d="M860 995 L860 455" class="o"/>
+  <path d="M1420 1042 L1340 1042" class="o"/>
+
+  <rect x="50" y="1180" width="2000" height="350" class="sec" fill="#fff7ed"/>
+  <text x="70" y="1212" class="h2">CI/CD + Infra deployment</text>
+  <rect x="90" y="1250" width="270" height="100" class="box"/><text x="108" y="1282" class="h3">Git Repo</text><text x="108" y="1304" class="tx">source + pipeline file</text>
+  <rect x="410" y="1250" width="340" height="100" class="box"/><image href="icons/azure/vm.svg" x="410" y="1266" width="16" height="16"/><text x="428" y="1282" class="h3">Jenkins VM/Container</text><text x="428" y="1304" class="tx">build/test/push/terraform</text>
+  <rect x="800" y="1250" width="300" height="100" class="box"/><text x="818" y="1282" class="h3">Docker Hub</text><text x="818" y="1304" class="tx">FE/BE images</text>
+  <rect x="1150" y="1250" width="330" height="100" class="box"/><image href="icons/azure/storage-account.svg" x="1150" y="1266" width="16" height="16"/><text x="1168" y="1282" class="h3">TF State Storage</text><text x="1168" y="1304" class="tx">sttigarantiastfstate01</text>
+  <rect x="1530" y="1250" width="480" height="100" class="box"/><text x="1548" y="1282" class="h3">Azure target (shared/dev RG)</text><text x="1548" y="1304" class="tx">create/update app infra</text>
+
+  <rect x="410" y="1370" width="1600" height="130" class="box"/>
+  <text x="428" y="1402" class="h3">Pipeline stages</text>
+  <text x="428" y="1424" class="tx">Checkout -> Terraform quality -> Backend tests -> Frontend build -> Build &amp; Push images -> Terraform apply</text>
+  <text x="428" y="1446" class="tx">Bootstrap Key Vault secrets + role assignments + PostgreSQL wiring</text>
+
+  <path d="M360 1300 L410 1300" class="p"/>
+  <path d="M750 1300 L800 1300" class="p"/>
+  <path d="M1100 1300 L1530 1300" class="p"/>
+  <path d="M1100 1330 L1150 1330" class="c"/>
+  <path d="M1770 1250 L2030 1250 L2030 500 L930 500 L930 455" class="p"/>
+  <path d="M1710 1250 L1990 1250 L1990 540 L560 540 L560 455" class="p"/>
+  <text x="1010" y="820" class="tx">deploy FE/BE</text>
+
+  <rect x="50" y="1530" width="2000" height="50" class="box"/>
+  <text x="70" y="1562" class="tx">Leyenda informativa: Dato=azul, Control/Secretos=verde punteado, Observabilidad=morado, CI/CD=naranja.</text>
+
+</svg>

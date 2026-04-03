@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1700" viewBox="0 0 2500 1700">
+  <defs>
+    <style>
+      .bg { fill:#f8fafc; stroke:#cbd5e1; stroke-width:2; rx:12; }
+      .zone { stroke:#94a3b8; stroke-width:2; rx:10; }
+      .sys { fill:#e0f2fe; stroke:#0369a1; stroke-width:1.6; rx:8; }
+      .ext { fill:#fef3c7; stroke:#b45309; stroke-width:1.6; rx:8; }
+      .cont { fill:#dcfce7; stroke:#166534; stroke-width:1.6; rx:8; }
+      .comp { fill:#ede9fe; stroke:#5b21b6; stroke-width:1.4; rx:8; }
+      .title { font:700 30px Arial,sans-serif; fill:#0f172a; }
+      .h2 { font:700 20px Arial,sans-serif; fill:#0f172a; }
+      .h3 { font:700 14px Arial,sans-serif; fill:#0f172a; }
+      .tx { font:12px Arial,sans-serif; fill:#1f2937; }
+      .line { stroke:#334155; stroke-width:2.2; fill:none; marker-end:url(#arr); }
+      .ctl { stroke:#0f766e; stroke-width:2; stroke-dasharray:7 6; fill:none; marker-end:url(#arrCtl); }
+    </style>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrCtl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#0f766e"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="20" width="2460" height="1660" class="bg"/>
+  <rect x="2180" y="20" width="300" height="1660" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="50" y="68" class="title">Ti Garantias - C4 Architecture (v5)</text>
+  <text x="50" y="94" class="tx">Modelo C4 adaptado: C1 Contexto, C2 Contenedores, C3 Componentes del Backend</text>
+
+  <!-- C1 CONTEXT -->
+  <rect x="50" y="120" width="2100" height="430" class="zone" fill="#f1f5f9"/>
+  <text x="70" y="152" class="h2">C1 - System Context</text>
+
+  <rect x="100" y="210" width="260" height="120" class="ext"/>
+  <text x="118" y="244" class="h3">Usuarios internos</text>
+  <text x="118" y="266" class="tx">Navegador web</text>
+  <text x="118" y="288" class="tx">Usan portal de garantias</text>
+
+  <rect x="440" y="210" width="470" height="180" class="sys"/>
+  <text x="458" y="244" class="h3">Sistema Ti Garantias</text>
+  <text x="458" y="266" class="tx">Portal Frontend + API Backend</text>
+  <text x="458" y="288" class="tx">Gestion de usuarios, facturas y catalogos</text>
+  <text x="458" y="310" class="tx">Ambiente principal actual: dev en Azure</text>
+
+  <rect x="980" y="210" width="300" height="120" class="ext"/>
+  <text x="998" y="244" class="h3">Docker Hub</text>
+  <text x="998" y="266" class="tx">Registry de imagenes</text>
+
+  <rect x="1330" y="210" width="360" height="120" class="ext"/>
+  <image href="icons/azure/subscription.svg" x="1332" y="228" width="16" height="16"/>
+  <text x="1348" y="244" class="h3">Azure Subscription</text>
+  <text x="1348" y="266" class="tx">Resource Groups y servicios cloud</text>
+
+  <rect x="1740" y="210" width="360" height="120" class="ext"/>
+  <image href="icons/azure/vm.svg" x="1742" y="228" width="16" height="16"/>
+  <text x="1758" y="244" class="h3">Jenkins (VM en shared-rg)</text>
+  <text x="1758" y="266" class="tx">Pipeline CI/CD</text>
+
+  <rect x="1330" y="360" width="770" height="150" class="ext"/>
+  <image href="icons/azure/key-vault.svg" x="1332" y="376" width="16" height="16"/>
+  <text x="1348" y="392" class="h3">Sistemas de soporte</text>
+  <text x="1348" y="414" class="tx">Key Vault (secretos), PostgreSQL (datos), Log Analytics (logs)</text>
+  <text x="1348" y="436" class="tx">VM monitoring: grafana, prometheus, loki, promtail, cadvisor (contenedores ti-garantias-*)</text>
+  <text x="1348" y="458" class="tx">Terraform state en Storage Account: sttigarantiastfstate01</text>
+
+  <path d="M360 270 L440 270" class="line"/>
+  <path d="M910 290 L980 290" class="line"/>
+  <path d="M1280 290 L1330 290" class="line"/>
+  <path d="M910 220 L910 188 L1860 188 L1860 210" class="line"/>
+  <path d="M1510 330 L1510 360" class="line"/>
+  <path d="M1740 250 L1740 170 L1130 170 L1130 210" class="ctl"/>
+  <path d="M1920 330 L1920 352 L1700 352 L1700 360" class="ctl"/>
+
+  <!-- C2 CONTAINER -->
+  <rect x="50" y="570" width="2100" height="540" class="zone" fill="#ecfeff"/>
+  <text x="70" y="602" class="h2">C2 - Container Diagram (Sistema Ti Garantias)</text>
+
+  <rect x="90" y="660" width="260" height="120" class="ext"/>
+  <text x="108" y="694" class="h3">Usuario</text>
+  <text x="108" y="716" class="tx">Browser + HTTPS</text>
+
+  <rect x="390" y="660" width="360" height="150" class="cont"/>
+  <image href="icons/azure/container-app.svg" x="392" y="678" width="16" height="16"/>
+  <text x="408" y="694" class="h3">Frontend SPA (Angular)</text>
+  <text x="408" y="716" class="tx">Container App: tigarantias-dev-fe</text>
+  <text x="408" y="738" class="tx">Public ingress :80</text>
+  <text x="408" y="760" class="tx">Proxy /api, /swagger, /metrics</text>
+  <text x="408" y="782" class="tx">Build: Angular + nginx runtime</text>
+
+  <rect x="810" y="660" width="360" height="150" class="cont"/>
+  <image href="icons/azure/container-app.svg" x="812" y="678" width="16" height="16"/>
+  <text x="828" y="694" class="h3">Backend API (.NET)</text>
+  <text x="828" y="716" class="tx">Container App: tigarantias-dev-be</text>
+  <text x="828" y="738" class="tx">Internal ingress :8080</text>
+  <text x="828" y="760" class="tx">JWT + reglas de negocio</text>
+  <text x="828" y="782" class="tx">CORS, Auth y servicios de dominio</text>
+
+  <rect x="1230" y="660" width="320" height="150" class="cont"/>
+  <image href="icons/azure/postgresql.svg" x="1232" y="678" width="16" height="16"/>
+  <text x="1248" y="694" class="h3">PostgreSQL Flexible</text>
+  <text x="1248" y="716" class="tx">tigarantias-dev-pg-tgd1</text>
+  <text x="1248" y="738" class="tx">Base de datos transaccional</text>
+  <text x="1248" y="760" class="tx">Conexion por secret connection-string</text>
+
+  <rect x="1610" y="660" width="500" height="150" class="cont"/>
+  <image href="icons/azure/container-app-env.svg" x="1612" y="678" width="16" height="16"/>
+  <text x="1628" y="694" class="h3">Managed Environment + Logs</text>
+  <text x="1628" y="716" class="tx">tigarantias-dev-cae + tigarantias-dev-law</text>
+  <text x="1628" y="738" class="tx">Hosting FE/BE + diagnostico centralizado</text>
+  <text x="1628" y="760" class="tx">Revision y escalado de Container Apps</text>
+
+  <rect x="390" y="850" width="360" height="150" class="cont"/>
+  <image href="icons/azure/key-vault.svg" x="392" y="868" width="16" height="16"/>
+  <text x="408" y="884" class="h3">Key Vault</text>
+  <text x="408" y="906" class="tx">conn-string, jwt-secret, registry-password</text>
+  <text x="408" y="928" class="tx">acceso por Managed Identity</text>
+
+  <rect x="810" y="850" width="360" height="150" class="cont"/>
+  <image href="icons/azure/managed-identity.svg" x="812" y="868" width="16" height="16"/>
+  <text x="828" y="884" class="h3">Managed Identity</text>
+  <text x="828" y="906" class="tx">tigarantias-dev-ca-mi</text>
+  <text x="828" y="928" class="tx">permiso lectura Key Vault</text>
+
+  <rect x="1230" y="850" width="320" height="150" class="cont"/>
+  <text x="1248" y="884" class="h3">Docker Hub</text>
+  <text x="1248" y="906" class="tx">imagenes FE y BE</text>
+  <text x="1248" y="928" class="tx">publicadas por Jenkins</text>
+  <text x="1248" y="950" class="tx">origen de pull para despliegues</text>
+
+  <rect x="1610" y="850" width="500" height="150" class="cont"/>
+  <text x="1628" y="884" class="h3">Monitoring VM Stack</text>
+  <text x="1628" y="906" class="tx">ti-garantias-grafana (3000) | dashboards</text>
+  <text x="1628" y="928" class="tx">ti-garantias-prometheus (9090) | scrape de metricas</text>
+  <text x="1628" y="950" class="tx">ti-garantias-loki | agregacion de logs</text>
+  <text x="1628" y="972" class="tx">ti-garantias-promtail + ti-garantias-cadvisor | ingesta/logs/host</text>
+
+  <!-- C2 lines -->
+  <path d="M350 715 L390 715" class="line"/>
+  <path d="M750 715 L810 715" class="line"/>
+  <path d="M1170 715 L1230 715" class="line"/>
+  <path d="M1790 660 L1790 640 L570 640 L570 660" class="line"/>
+  <path d="M1790 660 L1790 628 L990 628 L990 660" class="line"/>
+
+  <path d="M810 915 L750 915" class="ctl"/>
+  <path d="M570 850 L570 820 L980 820 L980 810" class="ctl"/>
+  <path d="M570 850 L570 835 L520 835 L520 810" class="ctl"/>
+  <path d="M1390 850 L1390 834 L990 834 L990 810" class="ctl"/>
+  <path d="M1390 850 L1390 844 L570 844 L570 810" class="ctl"/>
+  <path d="M1870 850 L1870 810" class="ctl"/>
+
+
+  <!-- C3 COMPONENT -->
+  <rect x="50" y="1130" width="2100" height="500" class="zone" fill="#f5f3ff"/>
+  <text x="70" y="1162" class="h2">C3 - Component Diagram (Backend API)</text>
+
+  <rect x="100" y="1230" width="300" height="120" class="comp"/>
+  <text x="118" y="1264" class="h3">AuthController</text>
+  <text x="118" y="1286" class="tx">login, JWT issuance</text>
+
+  <rect x="430" y="1230" width="320" height="120" class="comp"/>
+  <text x="448" y="1264" class="h3">InvoicesController</text>
+  <text x="448" y="1286" class="tx">CRUD y estados de factura</text>
+
+  <rect x="780" y="1230" width="320" height="120" class="comp"/>
+  <text x="798" y="1264" class="h3">UsersController</text>
+  <text x="798" y="1286" class="tx">gestion de usuarios</text>
+
+  <rect x="1130" y="1230" width="360" height="120" class="comp"/>
+  <text x="1148" y="1264" class="h3">CoreServices</text>
+  <text x="1148" y="1286" class="tx">reglas de negocio y orquestacion</text>
+
+  <rect x="1520" y="1230" width="260" height="120" class="comp"/>
+  <text x="1538" y="1264" class="h3">AppDbContext</text>
+  <text x="1538" y="1286" class="tx">EF Core + entidades</text>
+
+  <rect x="100" y="1390" width="320" height="140" class="comp"/>
+  <text x="118" y="1424" class="h3">Options/Config</text>
+  <text x="118" y="1446" class="tx">JwtOptions, SmtpOptions, StorageOptions</text>
+  <text x="118" y="1468" class="tx">variables y secretos</text>
+
+  <rect x="460" y="1390" width="360" height="140" class="comp"/>
+  <text x="478" y="1424" class="h3">Utils</text>
+  <text x="478" y="1446" class="tx">EmailNormalizer y helpers</text>
+  <text x="478" y="1468" class="tx">validaciones transversales</text>
+
+  <rect x="860" y="1390" width="420" height="140" class="comp"/>
+  <text x="878" y="1424" class="h3">External Integration</text>
+  <text x="878" y="1446" class="tx">SMTP, storage adjuntos, observabilidad</text>
+  <text x="878" y="1468" class="tx">dependencias infra</text>
+
+  <rect x="1320" y="1390" width="460" height="140" class="comp"/>
+  <text x="1338" y="1424" class="h3">Database Layer</text>
+  <text x="1338" y="1446" class="tx">Migrations, Entities, Repositories</text>
+  <text x="1338" y="1468" class="tx">persistencia PostgreSQL</text>
+
+  <path d="M400 1288 L430 1288" class="line"/>
+  <path d="M750 1288 L780 1288" class="line"/>
+  <path d="M1100 1288 L1130 1288" class="line"/>
+  <path d="M1490 1288 L1520 1288" class="line"/>
+
+  <path d="M1230 1390 L1230 1350" class="ctl"/>
+  <path d="M620 1390 L620 1350" class="ctl"/>
+  <path d="M260 1390 L260 1350" class="ctl"/>
+  <path d="M1550 1390 L1550 1350" class="ctl"/>
+  <text x="1240" y="1368" class="tx">Usa servicios</text>
+
+  <!-- legend (right sidebar, clear background) -->
+  <rect x="2210" y="120" width="250" height="340" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" rx="8"/>
+  <text x="2230" y="152" class="h3">Leyenda C4</text>
+  <rect x="2230" y="172" width="24" height="16" class="sys"/><text x="2262" y="185" class="tx">Sistema</text>
+  <rect x="2230" y="200" width="24" height="16" class="ext"/><text x="2262" y="213" class="tx">Externo</text>
+  <rect x="2230" y="228" width="24" height="16" class="cont"/><text x="2262" y="241" class="tx">Contenedor</text>
+  <rect x="2230" y="256" width="24" height="16" class="comp"/><text x="2262" y="269" class="tx">Componente</text>
+  <line x1="2230" y1="292" x2="2290" y2="292" class="line"/><text x="2300" y="296" class="tx">Runtime</text>
+  <line x1="2230" y1="320" x2="2290" y2="320" class="ctl"/><text x="2300" y="324" class="tx">Control</text>
+  <text x="2230" y="352" class="tx">C1: Contexto de sistema</text>
+  <text x="2230" y="374" class="tx">C2: Contenedores y datos</text>
+  <text x="2230" y="396" class="tx">C3: Componentes backend</text>
+  <text x="2230" y="418" class="tx">Lectura: izquierda a derecha</text>
+  <text x="2230" y="440" class="tx">Dependencias: KV, DB, CI/CD</text>
+</svg>
