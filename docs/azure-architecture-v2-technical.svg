@@ -48,9 +48,9 @@
 
   <rect x="1410" y="172" width="520" height="140" class="card"/>
   <image href="icons/azure/resource-groups.svg" x="1412" y="190" width="16" height="16"/>
-  <text x="1428" y="202" class="h3">tigarantias-dev-rg</text>
+  <text x="1428" y="202" class="h3">tigarantias-{env}-rg</text>
   <text x="1428" y="224" class="tx">CA Frontend/Backend, Managed Env, Key Vault</text>
-  <text x="1428" y="246" class="tx">Managed Identity, PostgreSQL, Storage, LAW</text>
+  <text x="1428" y="246" class="tx">Managed Identity, PostgreSQL, Storage, LAW ({env}=dev|test|prod)</text>
 
   <!-- LANE 2: RUNTIME -->
   <rect x="50" y="360" width="1900" height="300" class="lane" fill="#eff6ff"/>
@@ -63,33 +63,33 @@
   <rect x="390" y="430" width="330" height="110" class="card"/>
   <image href="icons/azure/container-app.svg" x="392" y="450" width="16" height="16"/>
   <text x="408" y="462" class="h3">Container App Frontend</text>
-  <text x="408" y="484" class="tx">tigarantias-dev-fe (public ingress :80)</text>
-  <text x="408" y="506" class="tx">BACKEND_UPSTREAM -> tigarantias-dev-be</text>
+  <text x="408" y="484" class="tx">tigarantias-{env}-fe (public ingress :80)</text>
+  <text x="408" y="506" class="tx">BACKEND_UPSTREAM -> tigarantias-{env}-be</text>
 
   <rect x="770" y="430" width="330" height="110" class="card"/>
   <image href="icons/azure/container-app.svg" x="772" y="450" width="16" height="16"/>
   <text x="788" y="462" class="h3">Container App Backend</text>
-  <text x="788" y="484" class="tx">tigarantias-dev-be (internal :8080)</text>
+  <text x="788" y="484" class="tx">tigarantias-{env}-be (internal :8080)</text>
   <text x="788" y="506" class="tx">API y logica de negocio</text>
 
   <rect x="1150" y="430" width="300" height="110" class="card"/>
   <image href="icons/azure/postgresql.svg" x="1152" y="450" width="16" height="16"/>
   <text x="1168" y="462" class="h3">PostgreSQL Flexible</text>
-  <text x="1168" y="484" class="tx">tigarantias-dev-pg-tgd1</text>
+  <text x="1168" y="484" class="tx">tigarantias-{env}-pg-{suffix}</text>
   <text x="1168" y="506" class="tx">Persistencia de datos</text>
 
   <rect x="1500" y="430" width="420" height="110" class="card"/>
   <text x="1518" y="462" class="h3">Endpoint publico FE</text>
-  <text x="1518" y="484" class="tx">tigarantias-dev-fe.*.azurecontainerapps.io</text>
+  <text x="1518" y="484" class="tx">tigarantias-{env}-fe.*.azurecontainerapps.io</text>
   <text x="1518" y="506" class="tx">Entrada para usuarios externos</text>
 
   <!-- Data lines (separate top channel to avoid crossing cards) -->
   <path d="M340 485 L390 485" class="data"/>
   <path d="M720 485 L770 485" class="data"/>
   <path d="M1100 485 L1150 485" class="data"/>
-  <path d="M1500 455 L1500 410 L740 410 L740 455" class="data"/>
+  <path d="M1500 455 L1500 395 L555 395 L555 430" class="data"/>
   <text x="500" y="474" class="tx">/api proxy</text>
-  <text x="905" y="474" class="tx">SQL</text>
+  <text x="1160" y="386" class="tx">FQDN publico del frontend</text>
 
   <!-- LANE 3: SECURITY -->
   <rect x="50" y="680" width="1900" height="280" class="lane" fill="#ecfeff"/>
@@ -98,13 +98,13 @@
   <rect x="260" y="760" width="340" height="130" class="card"/>
   <image href="icons/azure/managed-identity.svg" x="262" y="780" width="16" height="16"/>
   <text x="278" y="792" class="h3">Managed Identity</text>
-  <text x="278" y="814" class="tx">tigarantias-dev-ca-mi</text>
+  <text x="278" y="814" class="tx">tigarantias-{env}-ca-mi</text>
   <text x="278" y="836" class="tx">Lectura de secretos en Key Vault</text>
 
   <rect x="720" y="760" width="360" height="130" class="card"/>
   <image href="icons/azure/key-vault.svg" x="722" y="780" width="16" height="16"/>
   <text x="738" y="792" class="h3">Key Vault</text>
-  <text x="738" y="814" class="tx">tigarantiasdevtgd1kv</text>
+  <text x="738" y="814" class="tx">tigarantias{env}{suffix}kv</text>
   <text x="738" y="836" class="tx">connection-string, jwt-secret</text>
   <text x="738" y="858" class="tx">registry-password</text>
 
@@ -115,10 +115,10 @@
 
   <path d="M600 825 L720 825" class="ctrl"/>
   <path d="M1080 825 L1200 825" class="ctrl"/>
-  <path d="M1330 760 L1330 560" class="ctrl"/>
-  <path d="M1390 760 L1390 560" class="ctrl"/>
-  <text x="1304" y="650" class="tx">BE secrets</text>
-  <text x="1400" y="650" class="tx">FE secrets</text>
+  <path d="M1330 760 L1330 620 L935 620 L935 540" class="ctrl"/>
+  <path d="M1390 760 L1390 585 L555 585 L555 540" class="ctrl"/>
+  <text x="1110" y="610" class="tx">BE secrets</text>
+  <text x="920" y="575" class="tx">FE secrets</text>
 
   <!-- LANE 4: OBSERVABILITY -->
   <rect x="50" y="980" width="1900" height="360" class="lane" fill="#f5f3ff"/>
@@ -127,13 +127,13 @@
   <rect x="110" y="1050" width="320" height="110" class="card"/>
   <image href="icons/azure/container-app-env.svg" x="112" y="1070" width="16" height="16"/>
   <text x="128" y="1082" class="h3">Managed Environment</text>
-  <text x="128" y="1104" class="tx">tigarantias-dev-cae</text>
+  <text x="128" y="1104" class="tx">tigarantias-{env}-cae</text>
   <text x="128" y="1126" class="tx">Hostea FE y BE</text>
 
   <rect x="470" y="1050" width="320" height="110" class="card"/>
   <image href="icons/azure/log-analytics.svg" x="472" y="1070" width="16" height="16"/>
   <text x="488" y="1082" class="h3">Log Analytics Workspace</text>
-  <text x="488" y="1104" class="tx">tigarantias-dev-law</text>
+  <text x="488" y="1104" class="tx">tigarantias-{env}-law</text>
   <text x="488" y="1126" class="tx">Logs de Container Apps</text>
 
   <rect x="880" y="1050" width="250" height="110" class="card"/>
@@ -157,12 +157,14 @@
   <text x="1698" y="1126" class="tx">Logs + metricas host/contenedores VM</text>
 
   <path d="M430 1105 L470 1105" class="obs"/>
-  <path d="M790 1105 L880 1105" class="obs"/>
   <path d="M1130 1105 L1160 1105" class="obs"/>
-  <path d="M1410 1105 L1440 1105" class="obs"/>
-  <path d="M1660 1105 L1680 1105" class="obs"/>
-  <path d="M1030 1050 L1030 560" class="obs"/>
-  <text x="1040" y="760" class="tx">host FE/BE metrics path</text>
+  <path d="M1680 1138 L1660 1138" class="obs"/>
+  <path d="M1805 1050 L1805 1028 L1005 1028 L1005 1050" class="obs"/>
+  <path d="M1005 1050 L1005 1018 L505 1018 L505 540" class="obs"/>
+  <text x="760" y="1008" class="tx">Prometheus consulta /metrics del frontend publico</text>
+  <text x="1185" y="1094" class="tx">Grafana consulta metricas</text>
+  <text x="1450" y="1038" class="tx">Promtail envia logs a Loki</text>
+  <text x="1360" y="1018" class="tx">cAdvisor envia metricas a Prometheus</text>
 
   <!-- LANE 5: CICD -->
   <rect x="50" y="1360" width="1900" height="230" class="lane" fill="#fff7ed"/>
@@ -192,16 +194,16 @@
   <rect x="1560" y="1420" width="370" height="130" class="card"/>
   <image href="icons/azure/subscription.svg" x="1562" y="1440" width="16" height="16"/>
   <text x="1578" y="1452" class="h3">Azure target</text>
-  <text x="1578" y="1474" class="tx">shared-rg + dev-rg</text>
+  <text x="1578" y="1474" class="tx">shared-rg + {env}-rg</text>
   <text x="1578" y="1496" class="tx">Actualizacion de recursos</text>
 
   <path d="M370 1482 L420 1482" class="cicd"/>
   <path d="M780 1482 L830 1482" class="cicd"/>
-  <path d="M1130 1482 L1560 1482" class="cicd"/>
-  <path d="M1130 1510 L1180 1510" class="ctrl"/>
-  <path d="M1800 1420 L1800 560" class="cicd"/>
-  <path d="M1745 1420 L1745 560" class="cicd"/>
-  <text x="1756" y="980" class="tx">deploy FE/BE</text>
+  <path d="M560 1550 L560 1600 L1745 1600 L1745 1550" class="cicd"/>
+  <path d="M640 1550 L640 1580 L1345 1580 L1345 1550" class="ctrl"/>
+  <path d="M1735 1420 L1735 1395 L1938 1395 L1938 372 L935 372 L935 430" class="cicd"/>
+  <path d="M1755 1420 L1755 1375 L1948 1375 L1948 348 L555 348 L555 430" class="cicd"/>
+  <text x="1838" y="980" class="tx">deploy FE/BE</text>
 
   <!-- LEGEND -->
   <rect x="1480" y="1610" width="470" height="120" class="legend"/>
@@ -212,7 +214,7 @@
   <line x1="1730" y1="1664" x2="1810" y2="1664" class="cicd"/><text x="1820" y="1668" class="tx">CI/CD</text>
   <text x="50" y="1668" class="tx">Leyenda informativa: lee de izquierda a derecha por cada carril.</text>
   <text x="50" y="1690" class="tx">Azul=runtime, Verde=secretos, Morado=observabilidad, Naranja=despliegue.</text>
-  <text x="50" y="1712" class="tx">Dependencias criticas: Key Vault + Managed Identity + Docker Hub + TF state.</text>
-
-  <text x="50" y="1738" class="tx">Estado detectado al 2026-04-02: RG visibles -> rg-ti-garantias-tfstate, NetworkWatcherRG, tigarantias-shared-rg, tigarantias-dev-rg.</text>
+  <text x="50" y="1712" class="tx">FQDN = Fully Qualified Domain Name, es decir, la URL o dominio completo del servicio.</text>
+  <text x="50" y="1734" class="tx">Dependencias criticas: Key Vault + Managed Identity + Docker Hub + TF state.</text>
+  <text x="50" y="1754" class="tx">Patron: tigarantias-{env}-rg | {env}=dev|test|prod | {suffix}=tgd1|tgt1|tgp1.</text>
 </svg>

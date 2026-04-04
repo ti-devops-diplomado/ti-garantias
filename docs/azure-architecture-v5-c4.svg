@@ -36,40 +36,40 @@
   <text x="118" y="266" class="tx">Navegador web</text>
   <text x="118" y="288" class="tx">Usan portal de garantias</text>
 
-  <rect x="440" y="210" width="470" height="180" class="sys"/>
+  <rect x="440" y="190" width="520" height="180" class="sys"/>
   <text x="458" y="244" class="h3">Sistema Ti Garantias</text>
   <text x="458" y="266" class="tx">Portal Frontend + API Backend</text>
   <text x="458" y="288" class="tx">Gestion de usuarios, facturas y catalogos</text>
-  <text x="458" y="310" class="tx">Ambiente principal actual: dev en Azure</text>
+  <text x="458" y="310" class="tx">Patron multiambiente en Azure: {env} = dev | test | prod</text>
+  <rect x="1070" y="210" width="420" height="120" class="ext"/>
+  <image href="icons/azure/subscription.svg" x="1072" y="228" width="16" height="16"/>
+  <text x="1088" y="244" class="h3">Azure Subscription</text>
+  <text x="1088" y="266" class="tx">Resource Groups y servicios cloud</text>
+  <text x="1088" y="288" class="tx">shared-rg + {env}-rg</text>
 
-  <rect x="980" y="210" width="300" height="120" class="ext"/>
-  <text x="998" y="244" class="h3">Docker Hub</text>
-  <text x="998" y="266" class="tx">Registry de imagenes</text>
+  <rect x="1620" y="210" width="420" height="120" class="ext"/>
+  <image href="icons/azure/vm.svg" x="1622" y="228" width="16" height="16"/>
+  <text x="1638" y="244" class="h3">Jenkins (VM en shared-rg)</text>
+  <text x="1638" y="266" class="tx">Pipeline principal de CI/CD</text>
+  <text x="1638" y="288" class="tx">Build, push y despliegue en Azure</text>
 
-  <rect x="1330" y="210" width="360" height="120" class="ext"/>
-  <image href="icons/azure/subscription.svg" x="1332" y="228" width="16" height="16"/>
-  <text x="1348" y="244" class="h3">Azure Subscription</text>
-  <text x="1348" y="266" class="tx">Resource Groups y servicios cloud</text>
+  <rect x="1070" y="380" width="500" height="140" class="ext"/>
+  <image href="icons/azure/key-vault.svg" x="1072" y="396" width="16" height="16"/>
+  <text x="1088" y="412" class="h3">Servicios de soporte y operacion</text>
+  <text x="1088" y="434" class="tx">Key Vault, PostgreSQL y Log Analytics para el ambiente</text>
+  <text x="1088" y="456" class="tx">Monitoreo en VM compartida: Grafana, Prometheus, Loki, Promtail y cAdvisor</text>
+  <text x="1088" y="478" class="tx">Storage Account para Terraform state: sttigarantiastfstate01</text>
 
-  <rect x="1740" y="210" width="360" height="120" class="ext"/>
-  <image href="icons/azure/vm.svg" x="1742" y="228" width="16" height="16"/>
-  <text x="1758" y="244" class="h3">Jenkins (VM en shared-rg)</text>
-  <text x="1758" y="266" class="tx">Pipeline CI/CD</text>
-
-  <rect x="1330" y="360" width="770" height="150" class="ext"/>
-  <image href="icons/azure/key-vault.svg" x="1332" y="376" width="16" height="16"/>
-  <text x="1348" y="392" class="h3">Sistemas de soporte</text>
-  <text x="1348" y="414" class="tx">Key Vault (secretos), PostgreSQL (datos), Log Analytics (logs)</text>
-  <text x="1348" y="436" class="tx">VM monitoring: grafana, prometheus, loki, promtail, cadvisor (contenedores ti-garantias-*)</text>
-  <text x="1348" y="458" class="tx">Terraform state en Storage Account: sttigarantiastfstate01</text>
+  <rect x="1620" y="380" width="420" height="120" class="ext"/>
+  <text x="1638" y="414" class="h3">Docker Hub</text>
+  <text x="1638" y="436" class="tx">Imagenes FE/BE publicadas por Jenkins</text>
+  <text x="1638" y="458" class="tx">Origen de pull para despliegues</text>
 
   <path d="M360 270 L440 270" class="line"/>
-  <path d="M910 290 L980 290" class="line"/>
-  <path d="M1280 290 L1330 290" class="line"/>
-  <path d="M910 220 L910 188 L1860 188 L1860 210" class="line"/>
-  <path d="M1510 330 L1510 360" class="line"/>
-  <path d="M1740 250 L1740 170 L1130 170 L1130 210" class="ctl"/>
-  <path d="M1920 330 L1920 352 L1700 352 L1700 360" class="ctl"/>
+  <path d="M960 270 L1070 270" class="line"/>
+  <path d="M1280 330 L1280 355 L1570 355 L1570 380" class="line"/>
+  <path d="M1620 270 L1490 270" class="ctl"/>
+  <path d="M1830 330 L1830 380" class="ctl"/>
 
   <!-- C2 CONTAINER -->
   <rect x="50" y="570" width="2100" height="540" class="zone" fill="#ecfeff"/>
@@ -82,7 +82,7 @@
   <rect x="390" y="660" width="360" height="150" class="cont"/>
   <image href="icons/azure/container-app.svg" x="392" y="678" width="16" height="16"/>
   <text x="408" y="694" class="h3">Frontend SPA (Angular)</text>
-  <text x="408" y="716" class="tx">Container App: tigarantias-dev-fe</text>
+  <text x="408" y="716" class="tx">Container App: tigarantias-{env}-fe</text>
   <text x="408" y="738" class="tx">Public ingress :80</text>
   <text x="408" y="760" class="tx">Proxy /api, /swagger, /metrics</text>
   <text x="408" y="782" class="tx">Build: Angular + nginx runtime</text>
@@ -90,7 +90,7 @@
   <rect x="810" y="660" width="360" height="150" class="cont"/>
   <image href="icons/azure/container-app.svg" x="812" y="678" width="16" height="16"/>
   <text x="828" y="694" class="h3">Backend API (.NET)</text>
-  <text x="828" y="716" class="tx">Container App: tigarantias-dev-be</text>
+  <text x="828" y="716" class="tx">Container App: tigarantias-{env}-be</text>
   <text x="828" y="738" class="tx">Internal ingress :8080</text>
   <text x="828" y="760" class="tx">JWT + reglas de negocio</text>
   <text x="828" y="782" class="tx">CORS, Auth y servicios de dominio</text>
@@ -98,55 +98,62 @@
   <rect x="1230" y="660" width="320" height="150" class="cont"/>
   <image href="icons/azure/postgresql.svg" x="1232" y="678" width="16" height="16"/>
   <text x="1248" y="694" class="h3">PostgreSQL Flexible</text>
-  <text x="1248" y="716" class="tx">tigarantias-dev-pg-tgd1</text>
+  <text x="1248" y="716" class="tx">tigarantias-{env}-pg-{suffix}</text>
   <text x="1248" y="738" class="tx">Base de datos transaccional</text>
   <text x="1248" y="760" class="tx">Conexion por secret connection-string</text>
 
-  <rect x="1610" y="660" width="500" height="150" class="cont"/>
+  <rect x="1610" y="660" width="230" height="150" class="cont"/>
   <image href="icons/azure/container-app-env.svg" x="1612" y="678" width="16" height="16"/>
-  <text x="1628" y="694" class="h3">Managed Environment + Logs</text>
-  <text x="1628" y="716" class="tx">tigarantias-dev-cae + tigarantias-dev-law</text>
-  <text x="1628" y="738" class="tx">Hosting FE/BE + diagnostico centralizado</text>
-  <text x="1628" y="760" class="tx">Revision y escalado de Container Apps</text>
+  <text x="1628" y="694" class="h3">Managed Environment</text>
+  <text x="1628" y="716" class="tx">tigarantias-{env}-cae</text>
+  <text x="1628" y="738" class="tx">Hosting FE y BE</text>
+  <text x="1628" y="760" class="tx">Escalado y diagnostico</text>
 
-  <rect x="390" y="850" width="360" height="150" class="cont"/>
-  <image href="icons/azure/key-vault.svg" x="392" y="868" width="16" height="16"/>
-  <text x="408" y="884" class="h3">Key Vault</text>
-  <text x="408" y="906" class="tx">conn-string, jwt-secret, registry-password</text>
-  <text x="408" y="928" class="tx">acceso por Managed Identity</text>
+  <rect x="1860" y="660" width="250" height="150" class="cont"/>
+  <image href="icons/azure/log-analytics.svg" x="1862" y="678" width="16" height="16"/>
+  <text x="1878" y="694" class="h3">Log Analytics</text>
+  <text x="1878" y="716" class="tx">tigarantias-{env}-law</text>
+  <text x="1878" y="738" class="tx">Logs centralizados de</text>
+  <text x="1878" y="760" class="tx">Container Apps</text>
 
-  <rect x="810" y="850" width="360" height="150" class="cont"/>
-  <image href="icons/azure/managed-identity.svg" x="812" y="868" width="16" height="16"/>
-  <text x="828" y="884" class="h3">Managed Identity</text>
-  <text x="828" y="906" class="tx">tigarantias-dev-ca-mi</text>
-  <text x="828" y="928" class="tx">permiso lectura Key Vault</text>
+  <rect x="390" y="875" width="360" height="150" class="cont"/>
+  <image href="icons/azure/key-vault.svg" x="392" y="893" width="16" height="16"/>
+  <text x="408" y="909" class="h3">Key Vault</text>
+  <text x="408" y="931" class="tx">conn-string, jwt-secret, registry-password</text>
+  <text x="408" y="953" class="tx">acceso por Managed Identity</text>
 
-  <rect x="1230" y="850" width="320" height="150" class="cont"/>
-  <text x="1248" y="884" class="h3">Docker Hub</text>
-  <text x="1248" y="906" class="tx">imagenes FE y BE</text>
-  <text x="1248" y="928" class="tx">publicadas por Jenkins</text>
-  <text x="1248" y="950" class="tx">origen de pull para despliegues</text>
+  <rect x="810" y="875" width="360" height="150" class="cont"/>
+  <image href="icons/azure/managed-identity.svg" x="812" y="893" width="16" height="16"/>
+  <text x="828" y="909" class="h3">Managed Identity</text>
+  <text x="828" y="931" class="tx">tigarantias-{env}-ca-mi</text>
+  <text x="828" y="953" class="tx">permiso lectura Key Vault</text>
 
-  <rect x="1610" y="850" width="500" height="150" class="cont"/>
-  <text x="1628" y="884" class="h3">Monitoring VM Stack</text>
-  <text x="1628" y="906" class="tx">ti-garantias-grafana (3000) | dashboards</text>
-  <text x="1628" y="928" class="tx">ti-garantias-prometheus (9090) | scrape de metricas</text>
-  <text x="1628" y="950" class="tx">ti-garantias-loki | agregacion de logs</text>
-  <text x="1628" y="972" class="tx">ti-garantias-promtail + ti-garantias-cadvisor | ingesta/logs/host</text>
+  <rect x="1230" y="875" width="320" height="150" class="ext"/>
+  <text x="1248" y="909" class="h3">Docker Hub</text>
+  <text x="1248" y="931" class="tx">imagenes FE y BE</text>
+  <text x="1248" y="953" class="tx">publicadas por Jenkins</text>
+  <text x="1248" y="975" class="tx">origen de pull para despliegues</text>
+
+  <rect x="1610" y="875" width="500" height="150" class="ext"/>
+  <text x="1628" y="909" class="h3">Monitoring VM Stack</text>
+  <text x="1628" y="931" class="tx">Grafana dashboards y visualizacion</text>
+  <text x="1628" y="953" class="tx">Prometheus, Loki, Promtail y cAdvisor</text>
+  <text x="1628" y="975" class="tx">Monitoreo operativo alojado en shared-rg</text>
+  <text x="1628" y="997" class="tx">Consulta metricas y consolida logs</text>
 
   <!-- C2 lines -->
   <path d="M350 715 L390 715" class="line"/>
   <path d="M750 715 L810 715" class="line"/>
   <path d="M1170 715 L1230 715" class="line"/>
-  <path d="M1790 660 L1790 640 L570 640 L570 660" class="line"/>
-  <path d="M1790 660 L1790 628 L990 628 L990 660" class="line"/>
+  <path d="M1725 654 L1725 630 L570 630 L570 659" class="ctl"/>
+  <path d="M1725 654 L1725 608 L990 608 L990 659" class="ctl"/>
+  <path d="M1840 735 L1859 735" class="ctl"/>
 
-  <path d="M810 915 L750 915" class="ctl"/>
-  <path d="M570 850 L570 820 L980 820 L980 810" class="ctl"/>
-  <path d="M570 850 L570 835 L520 835 L520 810" class="ctl"/>
-  <path d="M1390 850 L1390 834 L990 834 L990 810" class="ctl"/>
-  <path d="M1390 850 L1390 844 L570 844 L570 810" class="ctl"/>
-  <path d="M1870 850 L1870 810" class="ctl"/>
+  <path d="M804 940 L751 940" class="ctl"/>
+  <path d="M570 869 L570 840 L440 840 L440 816" class="ctl"/>
+  <path d="M570 869 L570 852 L980 852 L980 816" class="ctl"/>
+  <path d="M1390 869 L1390 840 L1065 840 L1065 816" class="ctl"/>
+  <path d="M1390 869 L1390 864 L640 864 L640 816" class="ctl"/>
 
 
   <!-- C3 COMPONENT -->
@@ -162,16 +169,16 @@
   <text x="448" y="1286" class="tx">CRUD y estados de factura</text>
 
   <rect x="780" y="1230" width="320" height="120" class="comp"/>
-  <text x="798" y="1264" class="h3">UsersController</text>
-  <text x="798" y="1286" class="tx">gestion de usuarios</text>
+  <text x="798" y="1264" class="h3">Users + Settings Controllers</text>
+  <text x="798" y="1286" class="tx">gestion de usuarios y configuracion</text>
 
   <rect x="1130" y="1230" width="360" height="120" class="comp"/>
   <text x="1148" y="1264" class="h3">CoreServices</text>
-  <text x="1148" y="1286" class="tx">reglas de negocio y orquestacion</text>
+  <text x="1148" y="1286" class="tx">reglas de negocio, auditoria y tokens</text>
 
-  <rect x="1520" y="1230" width="260" height="120" class="comp"/>
+  <rect x="1520" y="1230" width="320" height="120" class="comp"/>
   <text x="1538" y="1264" class="h3">AppDbContext</text>
-  <text x="1538" y="1286" class="tx">EF Core + entidades</text>
+  <text x="1538" y="1286" class="tx">EF Core, DbSets y persistencia</text>
 
   <rect x="100" y="1390" width="320" height="140" class="comp"/>
   <text x="118" y="1424" class="h3">Options/Config</text>
@@ -184,25 +191,31 @@
   <text x="478" y="1468" class="tx">validaciones transversales</text>
 
   <rect x="860" y="1390" width="420" height="140" class="comp"/>
-  <text x="878" y="1424" class="h3">External Integration</text>
-  <text x="878" y="1446" class="tx">SMTP, storage adjuntos, observabilidad</text>
-  <text x="878" y="1468" class="tx">dependencias infra</text>
+  <text x="878" y="1424" class="h3">Integraciones y jobs</text>
+  <text x="878" y="1446" class="tx">SMTP, adjuntos, inicializacion y Hangfire</text>
+  <text x="878" y="1468" class="tx">NotificationService, AttachmentStorage y jobs</text>
 
   <rect x="1320" y="1390" width="460" height="140" class="comp"/>
   <text x="1338" y="1424" class="h3">Database Layer</text>
-  <text x="1338" y="1446" class="tx">Migrations, Entities, Repositories</text>
+  <text x="1338" y="1446" class="tx">Migrations, Entities y AppDbContext</text>
   <text x="1338" y="1468" class="tx">persistencia PostgreSQL</text>
+
+  <rect x="1860" y="1230" width="220" height="120" class="comp"/>
+  <text x="1878" y="1264" class="h3">Master Data</text>
+  <text x="1878" y="1286" class="tx">Suppliers, Contracts,</text>
+  <text x="1878" y="1308" class="tx">Deliverables</text>
 
   <path d="M400 1288 L430 1288" class="line"/>
   <path d="M750 1288 L780 1288" class="line"/>
   <path d="M1100 1288 L1130 1288" class="line"/>
   <path d="M1490 1288 L1520 1288" class="line"/>
+  <path d="M1840 1288 L1860 1288" class="line"/>
 
   <path d="M1230 1390 L1230 1350" class="ctl"/>
   <path d="M620 1390 L620 1350" class="ctl"/>
   <path d="M260 1390 L260 1350" class="ctl"/>
   <path d="M1550 1390 L1550 1350" class="ctl"/>
-  <text x="1240" y="1368" class="tx">Usa servicios</text>
+  <text x="110" y="1560" class="tx">Componentes de soporte: configuracion, utilidades, integraciones y persistencia.</text>
 
   <!-- legend (right sidebar, clear background) -->
   <rect x="2210" y="120" width="250" height="340" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" rx="8"/>

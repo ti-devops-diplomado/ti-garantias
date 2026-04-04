@@ -1,0 +1,306 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1220" viewBox="0 0 1900 1220">
+<defs><style>.bg{fill:#f6f8fb}
+.title{font:700 30px Arial,sans-serif;fill:#0f172a}
+.subtitle{font:13px Arial,sans-serif;fill:#475569}
+.caption{font:12px Arial,sans-serif;fill:#64748b}
+.zone-security{fill:#eef6ff;stroke:#bfdbfe;stroke-width:1.2}
+.zone-business{fill:#ecfdf5;stroke:#a7f3d0;stroke-width:1.2}
+.zone-support{fill:#fff7ed;stroke:#fdba74;stroke-width:1.2}
+.box{fill:#fff;stroke:#dbe4ef;stroke-width:1.2}
+.table-title{font:700 14px Arial,sans-serif;fill:#fff}
+.field-name{font:700 12px Arial,sans-serif;fill:#0f172a}
+.field-type{font:12px Arial,sans-serif;fill:#94a3b8;text-anchor:end}
+.key-text{font:700 9px Arial,sans-serif;fill:#fff;text-anchor:middle}
+.line{stroke:#cbd5e1;stroke-width:2.1;fill:none}
+.label{font:11px Arial,sans-serif;fill:#64748b}
+.legend-title{font:700 14px Arial,sans-serif;fill:#0f172a}
+.legend-text{font:12px Arial,sans-serif;fill:#334155}</style></defs>
+<rect width="1900" height="1220" class="bg"/>
+<text x="50" y="68" class="title">Ti Garantias - Modelo Relacional Completo</text>
+<text x="50" y="94" class="subtitle">Esquema completo del schema core validado desde PostgreSQL del contenedor local ti-garantias-db.</text>
+<rect x="30" y="110" width="560" height="1080" class="zone-security" rx="14"/>
+<text x="50" y="134" class="caption">SEGURIDAD</text>
+<rect x="610" y="110" width="820" height="1080" class="zone-business" rx="14"/>
+<text x="630" y="134" class="caption">NEGOCIO</text>
+<rect x="1450" y="110" width="420" height="1080" class="zone-support" rx="14"/>
+<text x="1470" y="134" class="caption">SOPORTE</text>
+<rect x="50" y="160" width="250" height="200" class="box"/>
+<rect x="50" y="160" width="250" height="42" fill="#1d4ed8" rx="8"/>
+<text x="68" y="186" class="table-title">users</text>
+<text x="70" y="216" class="field-name">Id</text>
+<rect x="180" y="203" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="200.0" y="214" class="key-text">PK</text>
+<text x="282" y="216" class="field-type">uuid</text>
+<text x="70" y="238" class="field-name">Email</text>
+<text x="282" y="238" class="field-type">varchar</text>
+<text x="70" y="260" class="field-name">FullName</text>
+<text x="282" y="260" class="field-type">varchar</text>
+<text x="70" y="282" class="field-name">PasswordHash</text>
+<text x="282" y="282" class="field-type">varchar</text>
+<text x="70" y="304" class="field-name">IsActive</text>
+<text x="282" y="304" class="field-type">bool</text>
+<text x="70" y="326" class="field-name">CreatedAt</text>
+<text x="282" y="326" class="field-type">timestamptz</text>
+<rect x="320" y="160" width="240" height="112" class="box"/>
+<rect x="320" y="160" width="240" height="42" fill="#1d4ed8" rx="8"/>
+<text x="338" y="186" class="table-title">roles</text>
+<text x="340" y="216" class="field-name">Id</text>
+<rect x="440" y="203" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="460.0" y="214" class="key-text">PK</text>
+<text x="542" y="216" class="field-type">uuid</text>
+<text x="340" y="238" class="field-name">Name</text>
+<text x="542" y="238" class="field-type">varchar</text>
+<rect x="180" y="420" width="260" height="112" class="box"/>
+<rect x="180" y="420" width="260" height="42" fill="#1d4ed8" rx="8"/>
+<text x="198" y="446" class="table-title">user_roles</text>
+<text x="200" y="476" class="field-name">UserId</text>
+<rect x="320" y="463" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="340.0" y="474" class="key-text">PK/FK</text>
+<text x="422" y="476" class="field-type">uuid</text>
+<text x="200" y="498" class="field-name">RoleId</text>
+<rect x="320" y="485" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="340.0" y="496" class="key-text">PK/FK</text>
+<text x="422" y="498" class="field-type">uuid</text>
+<rect x="50" y="610" width="360" height="222" class="box"/>
+<rect x="50" y="610" width="360" height="42" fill="#b45309" rx="8"/>
+<text x="68" y="636" class="table-title">audit_events</text>
+<text x="70" y="666" class="field-name">Id</text>
+<rect x="290" y="653" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="310.0" y="664" class="key-text">PK</text>
+<text x="392" y="666" class="field-type">uuid</text>
+<text x="70" y="688" class="field-name">EntityType</text>
+<text x="392" y="688" class="field-type">varchar</text>
+<text x="70" y="710" class="field-name">EntityId</text>
+<text x="392" y="710" class="field-type">varchar</text>
+<text x="70" y="732" class="field-name">Action</text>
+<text x="392" y="732" class="field-type">varchar</text>
+<text x="70" y="754" class="field-name">UserId</text>
+<rect x="290" y="741" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="310.0" y="752" class="key-text">FK</text>
+<text x="392" y="754" class="field-type">uuid</text>
+<text x="70" y="776" class="field-name">PayloadJson</text>
+<text x="392" y="776" class="field-type">text</text>
+<text x="70" y="798" class="field-name">OccurredAt</text>
+<text x="392" y="798" class="field-type">timestamptz</text>
+<rect x="630" y="160" width="240" height="178" class="box"/>
+<rect x="630" y="160" width="240" height="42" fill="#0f766e" rx="8"/>
+<text x="648" y="186" class="table-title">suppliers</text>
+<text x="650" y="216" class="field-name">Id</text>
+<rect x="750" y="203" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="770.0" y="214" class="key-text">PK</text>
+<text x="852" y="216" class="field-type">uuid</text>
+<text x="650" y="238" class="field-name">Name</text>
+<text x="852" y="238" class="field-type">varchar</text>
+<text x="650" y="260" class="field-name">TaxId</text>
+<text x="852" y="260" class="field-type">varchar</text>
+<text x="650" y="282" class="field-name">ContactEmail</text>
+<text x="852" y="282" class="field-type">varchar</text>
+<text x="650" y="304" class="field-name">CreatedAt</text>
+<text x="852" y="304" class="field-type">timestamptz</text>
+<rect x="890" y="160" width="270" height="222" class="box"/>
+<rect x="890" y="160" width="270" height="42" fill="#0f766e" rx="8"/>
+<text x="908" y="186" class="table-title">contracts</text>
+<text x="910" y="216" class="field-name">Id</text>
+<rect x="1040" y="203" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1060.0" y="214" class="key-text">PK</text>
+<text x="1142" y="216" class="field-type">uuid</text>
+<text x="910" y="238" class="field-name">SupplierId</text>
+<rect x="1040" y="225" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1060.0" y="236" class="key-text">FK</text>
+<text x="1142" y="238" class="field-type">uuid</text>
+<text x="910" y="260" class="field-name">ContractNumber</text>
+<text x="1142" y="260" class="field-type">varchar</text>
+<text x="910" y="282" class="field-name">Title</text>
+<text x="1142" y="282" class="field-type">varchar</text>
+<text x="910" y="304" class="field-name">StartDate</text>
+<text x="1142" y="304" class="field-type">date</text>
+<text x="910" y="326" class="field-name">EndDate</text>
+<text x="1142" y="326" class="field-type">date</text>
+<text x="910" y="348" class="field-name">RetentionPercentage</text>
+<text x="1142" y="348" class="field-type">numeric</text>
+<rect x="1180" y="160" width="240" height="178" class="box"/>
+<rect x="1180" y="160" width="240" height="42" fill="#0f766e" rx="8"/>
+<text x="1198" y="186" class="table-title">deliverables</text>
+<text x="1200" y="216" class="field-name">Id</text>
+<rect x="1300" y="203" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1320.0" y="214" class="key-text">PK</text>
+<text x="1402" y="216" class="field-type">uuid</text>
+<text x="1200" y="238" class="field-name">ContractId</text>
+<rect x="1300" y="225" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1320.0" y="236" class="key-text">FK</text>
+<text x="1402" y="238" class="field-type">uuid</text>
+<text x="1200" y="260" class="field-name">Name</text>
+<text x="1402" y="260" class="field-type">varchar</text>
+<text x="1200" y="282" class="field-name">Description</text>
+<text x="1402" y="282" class="field-type">varchar</text>
+<text x="1200" y="304" class="field-name">DueDate</text>
+<text x="1402" y="304" class="field-type">date</text>
+<rect x="650" y="470" width="250" height="112" class="box"/>
+<rect x="650" y="470" width="250" height="42" fill="#0f766e" rx="8"/>
+<text x="668" y="496" class="table-title">invoice_deliverables</text>
+<text x="670" y="526" class="field-name">InvoiceId</text>
+<rect x="780" y="513" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="800.0" y="524" class="key-text">PK/FK</text>
+<text x="882" y="526" class="field-type">uuid</text>
+<text x="670" y="548" class="field-name">DeliverableId</text>
+<rect x="780" y="535" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="800.0" y="546" class="key-text">PK/FK</text>
+<text x="882" y="548" class="field-type">uuid</text>
+<rect x="930" y="440" width="380" height="442" class="box"/>
+<rect x="930" y="440" width="380" height="42" fill="#0f766e" rx="8"/>
+<text x="948" y="466" class="table-title">invoices</text>
+<text x="950" y="496" class="field-name">Id</text>
+<rect x="1190" y="483" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1210.0" y="494" class="key-text">PK</text>
+<text x="1292" y="496" class="field-type">uuid</text>
+<text x="950" y="518" class="field-name">ContractId</text>
+<rect x="1190" y="505" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1210.0" y="516" class="key-text">FK</text>
+<text x="1292" y="518" class="field-type">uuid</text>
+<text x="950" y="540" class="field-name">SupplierId</text>
+<rect x="1190" y="527" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1210.0" y="538" class="key-text">FK</text>
+<text x="1292" y="540" class="field-type">uuid</text>
+<text x="950" y="562" class="field-name">InvoiceNumber</text>
+<text x="1292" y="562" class="field-type">varchar</text>
+<text x="950" y="584" class="field-name">InvoiceNumberNormalized</text>
+<text x="1292" y="584" class="field-type">varchar</text>
+<text x="950" y="606" class="field-name">InvoiceDate</text>
+<text x="1292" y="606" class="field-type">date</text>
+<text x="950" y="628" class="field-name">InvoiceAmount</text>
+<text x="1292" y="628" class="field-type">numeric</text>
+<text x="950" y="650" class="field-name">PurchaseOrder</text>
+<text x="1292" y="650" class="field-type">varchar</text>
+<text x="950" y="672" class="field-name">RetainedAmount</text>
+<text x="1292" y="672" class="field-type">numeric</text>
+<text x="950" y="694" class="field-name">GuaranteeRefundable</text>
+<text x="1292" y="694" class="field-type">bool</text>
+<text x="950" y="716" class="field-name">EstimatedRefundDate</text>
+<text x="1292" y="716" class="field-type">date</text>
+<text x="950" y="738" class="field-name">RefundManagedDate</text>
+<text x="1292" y="738" class="field-type">date</text>
+<text x="950" y="760" class="field-name">RefundManagerUserId</text>
+<rect x="1190" y="747" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1210.0" y="758" class="key-text">FK</text>
+<text x="1292" y="760" class="field-type">uuid</text>
+<text x="950" y="782" class="field-name">Status</text>
+<text x="1292" y="782" class="field-type">varchar</text>
+<text x="950" y="804" class="field-name">CreatedByUserId</text>
+<rect x="1190" y="791" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1210.0" y="802" class="key-text">FK</text>
+<text x="1292" y="804" class="field-type">uuid</text>
+<text x="950" y="826" class="field-name">CreatedAt</text>
+<text x="1292" y="826" class="field-type">timestamptz</text>
+<text x="950" y="848" class="field-name">UpdatedAt</text>
+<text x="1292" y="848" class="field-type">timestamptz</text>
+<rect x="1490" y="160" width="360" height="266" class="box"/>
+<rect x="1490" y="160" width="360" height="42" fill="#b45309" rx="8"/>
+<text x="1508" y="186" class="table-title">attachments</text>
+<text x="1510" y="216" class="field-name">Id</text>
+<rect x="1730" y="203" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1750.0" y="214" class="key-text">PK</text>
+<text x="1832" y="216" class="field-type">uuid</text>
+<text x="1510" y="238" class="field-name">InvoiceId</text>
+<rect x="1730" y="225" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1750.0" y="236" class="key-text">FK</text>
+<text x="1832" y="238" class="field-type">uuid</text>
+<text x="1510" y="260" class="field-name">OriginalFileName</text>
+<text x="1832" y="260" class="field-type">varchar</text>
+<text x="1510" y="282" class="field-name">StoredFileName</text>
+<text x="1832" y="282" class="field-type">varchar</text>
+<text x="1510" y="304" class="field-name">ContentType</text>
+<text x="1832" y="304" class="field-type">varchar</text>
+<text x="1510" y="326" class="field-name">RelativePath</text>
+<text x="1832" y="326" class="field-type">varchar</text>
+<text x="1510" y="348" class="field-name">SizeInBytes</text>
+<text x="1832" y="348" class="field-type">bigint</text>
+<text x="1510" y="370" class="field-name">UploadedByUserId</text>
+<rect x="1730" y="357" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1750.0" y="368" class="key-text">FK</text>
+<text x="1832" y="370" class="field-type">uuid</text>
+<text x="1510" y="392" class="field-name">UploadedAt</text>
+<text x="1832" y="392" class="field-type">timestamptz</text>
+<rect x="1490" y="500" width="360" height="200" class="box"/>
+<rect x="1490" y="500" width="360" height="42" fill="#b45309" rx="8"/>
+<text x="1508" y="526" class="table-title">notification_log</text>
+<text x="1510" y="556" class="field-name">Id</text>
+<rect x="1730" y="543" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1750.0" y="554" class="key-text">PK</text>
+<text x="1832" y="556" class="field-type">uuid</text>
+<text x="1510" y="578" class="field-name">InvoiceId</text>
+<rect x="1730" y="565" width="40" height="16" fill="#94a3b8" rx="7"/>
+<text x="1750.0" y="576" class="key-text">FK</text>
+<text x="1832" y="578" class="field-type">uuid</text>
+<text x="1510" y="600" class="field-name">NotificationType</text>
+<text x="1832" y="600" class="field-type">varchar</text>
+<text x="1510" y="622" class="field-name">SentTo</text>
+<text x="1832" y="622" class="field-type">varchar</text>
+<text x="1510" y="644" class="field-name">SentAt</text>
+<text x="1832" y="644" class="field-type">timestamptz</text>
+<text x="1510" y="666" class="field-name">MetadataJson</text>
+<text x="1832" y="666" class="field-type">text</text>
+<rect x="1490" y="760" width="360" height="156" class="box"/>
+<rect x="1490" y="760" width="360" height="42" fill="#b45309" rx="8"/>
+<text x="1508" y="786" class="table-title">settings</text>
+<text x="1510" y="816" class="field-name">Id</text>
+<rect x="1730" y="803" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1750.0" y="814" class="key-text">PK</text>
+<text x="1832" y="816" class="field-type">uuid</text>
+<text x="1510" y="838" class="field-name">Key</text>
+<text x="1832" y="838" class="field-type">varchar</text>
+<text x="1510" y="860" class="field-name">Value</text>
+<text x="1832" y="860" class="field-type">varchar</text>
+<text x="1510" y="882" class="field-name">Description</text>
+<text x="1832" y="882" class="field-type">varchar</text>
+<rect x="1490" y="980" width="360" height="112" class="box"/>
+<rect x="1490" y="980" width="360" height="42" fill="#b45309" rx="8"/>
+<text x="1508" y="1006" class="table-title">__EFMigrationsHistory</text>
+<text x="1510" y="1036" class="field-name">MigrationId</text>
+<rect x="1730" y="1023" width="40" height="16" fill="#0ea5e9" rx="7"/>
+<text x="1750.0" y="1034" class="key-text">PK</text>
+<text x="1832" y="1036" class="field-type">varchar</text>
+<text x="1510" y="1058" class="field-name">ProductVersion</text>
+<text x="1832" y="1058" class="field-type">varchar</text>
+<path d="M 162.5 360 L 162.5 400 L 271.0 400 L 271.0 420" class="line"/>
+<path d="M 452.0 272 L 452.0 400 L 349.0 400 L 349.0 420" class="line"/>
+<path d="M 70 360 L 70 590 L 70 590 L 70 610" class="line"/>
+<path d="M 870 220 L 890 220" class="line"/>
+<path d="M 1160 246 L 1180 246" class="line"/>
+<path d="M 1038.5 382 L 1038.5 422 L 1025.0 422 L 1025.0 440" class="line"/>
+<path d="M 726.0 338 L 726.0 400 L 1101.0 400 L 1101.0 440" class="line"/>
+<path d="M 1300.0 338 L 1300.0 452 L 837.5 452 L 837.5 470" class="line"/>
+<path d="M 900 526.0 L 910 526.0 L 910 550.5 L 930 550.5" class="line"/>
+<path d="M 1310 520 L 1490 240" class="line"/>
+<path d="M 1310 620 L 1490 580" class="line"/>
+<path d="M 300 250 L 600 250 L 600 410 L 910 410 L 910 740 L 930 740" class="line"/>
+<path d="M 300 280 L 620 280 L 620 428 L 920 428 L 920 770 L 930 770" class="line"/>
+<path d="M 300 310 L 610 310 L 610 145 L 1460 145 L 1460 400 L 1490 400" class="line"/>
+<text x="300.0" y="394" class="label">N:M</text>
+<text x="78" y="485.0" class="label">1:N</text>
+<text x="862" y="212" class="label">1:N</text>
+<text x="1152" y="238" class="label">1:N</text>
+<text x="940" y="416" class="label">1:N</text>
+<text x="1050" y="394" class="label">1:N</text>
+<text x="866" y="446" class="label">1:N</text>
+<text x="882" y="544.5" class="label">N:M</text>
+<text x="1458" y="232" class="label">1:N</text>
+<text x="1458" y="572" class="label">1:N</text>
+<text x="926" y="734" class="label">CreatedByUserId</text>
+<text x="926" y="764" class="label">RefundManagerUserId</text>
+<text x="1340" y="139" class="label">UploadedByUserId</text>
+<rect x="650" y="930" width="700" height="200" class="box"/>
+<text x="670" y="960" class="legend-title">Leyenda</text>
+<rect x="670" y="976" width="18" height="18" fill="#1d4ed8"/>
+<text x="700" y="990" class="legend-text">Seguridad</text>
+<rect x="670" y="1004" width="18" height="18" fill="#0f766e"/>
+<text x="700" y="1018" class="legend-text">Negocio</text>
+<rect x="670" y="1032" width="18" height="18" fill="#b45309"/>
+<text x="700" y="1046" class="legend-text">Soporte</text>
+<rect x="670" y="1060" width="34" height="16" fill="#0ea5e9" rx="7"/>
+<text x="687" y="1072" class="key-text">PK</text>
+<text x="720" y="1072" class="legend-text">Llave primaria</text>
+<rect x="910" y="1060" width="34" height="16" fill="#94a3b8" rx="7"/>
+<text x="927" y="1072" class="key-text">FK</text>
+<text x="960" y="1072" class="legend-text">Llave foranea</text>
+<text x="670" y="1100" class="legend-text">Incluye todas las tablas del schema core y relaciones confirmadas en PostgreSQL.</text>
+</svg>

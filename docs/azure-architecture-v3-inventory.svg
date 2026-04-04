@@ -45,50 +45,53 @@
   <text x="648" y="574" class="tx">NetworkWatcher_centralus</text>
   <text x="648" y="598" class="tx">Microsoft.Network/networkWatchers</text>
   <rect x="1180" y="540" width="530" height="120" class="card"/>
-  <text x="1198" y="574" class="tx">Rol: diagnostico de red / soporte operativo</text>
+  <text x="1198" y="574" class="tx">Servicio administrado por Azure para diagnostico y monitoreo de red.</text>
 
   <rect x="50" y="710" width="1700" height="360" class="sec" fill="#fff7ed"/>
   <text x="70" y="742" class="h2">RG: tigarantias-shared-rg</text>
-  <rect x="80" y="770" width="240" height="120" class="card"/><image href="icons/azure/virtual-network.svg" x="80" y="790" width="16" height="16"/><text x="96" y="806" class="tx">VNet</text><text x="96" y="830" class="tx">tigarantias-shared-vnet</text>
-  <rect x="340" y="770" width="240" height="120" class="card"/><image href="icons/azure/nsg.svg" x="340" y="790" width="16" height="16"/><text x="356" y="806" class="tx">NSG</text><text x="356" y="830" class="tx">tigarantias-jenkins-nsg</text>
+  <rect x="80" y="770" width="240" height="120" class="card"/><image href="icons/azure/virtual-network.svg" x="80" y="790" width="16" height="16"/><text x="96" y="806" class="tx">Virtual Network (VNet)</text><text x="96" y="830" class="tx">tigarantias-shared-vnet</text>
+  <rect x="340" y="770" width="240" height="120" class="card"/><image href="icons/azure/nsg.svg" x="340" y="790" width="16" height="16"/><text x="356" y="806" class="tx">Network Security Group (NSG)</text><text x="356" y="830" class="tx">tigarantias-jenkins-nsg</text>
   <rect x="600" y="770" width="240" height="120" class="card"/><image href="icons/azure/public-ip.svg" x="600" y="790" width="16" height="16"/><text x="616" y="806" class="tx">Public IP</text><text x="616" y="830" class="tx">tigarantias-jenkins-pip</text>
-  <rect x="860" y="770" width="240" height="120" class="card"/><image href="icons/azure/nic.svg" x="860" y="790" width="16" height="16"/><text x="876" y="806" class="tx">NIC</text><text x="876" y="830" class="tx">tigarantias-jenkins-nic</text>
-  <rect x="1120" y="770" width="260" height="120" class="card"/><image href="icons/azure/vm.svg" x="1120" y="790" width="16" height="16"/><text x="1136" y="806" class="tx">VM</text><text x="1136" y="830" class="tx">tigarantias-jenkins-vm</text>
+  <rect x="860" y="770" width="240" height="120" class="card"/><image href="icons/azure/nic.svg" x="860" y="790" width="16" height="16"/><text x="876" y="806" class="tx">Network Interface (NIC)</text><text x="876" y="830" class="tx">tigarantias-jenkins-nic</text>
+  <rect x="1120" y="770" width="260" height="120" class="card"/><image href="icons/azure/vm.svg" x="1120" y="790" width="16" height="16"/><text x="1136" y="806" class="tx">Virtual Machine (VM)</text><text x="1136" y="830" class="tx">tigarantias-jenkins-vm</text>
   <rect x="1400" y="770" width="310" height="120" class="card"/><text x="1416" y="806" class="tx">Disk + Extension</text><text x="1416" y="830" class="tx">OsDisk + AADSSHLoginForLinux</text>
   <rect x="80" y="910" width="1630" height="130" class="card"/>
   <text x="98" y="944" class="tx">Servicios en VM (contenedores): ti-garantias-grafana, ti-garantias-prometheus, ti-garantias-loki</text>
   <text x="98" y="968" class="tx">Tambien: ti-garantias-promtail, ti-garantias-cadvisor (logs y metricas del host/contenedores)</text>
   <text x="98" y="992" class="tx">Puertos NSG: 22, 8080, 3000, 9090 | IP privada 10.40.1.4 | IP publica 74.249.157.233</text>
-  <text x="98" y="1016" class="tx">Pipeline Jenkins consume Docker Hub y Terraform para actualizar recursos de dev.</text>
+  <text x="98" y="1016" class="tx">Pipeline Jenkins consume Docker Hub y Terraform para actualizar recursos por ambiente.</text>
 
   <rect x="50" y="1090" width="1700" height="340" class="sec" fill="#eff6ff"/>
-  <text x="70" y="1122" class="h2">RG: tigarantias-dev-rg</text>
-  <rect x="80" y="1150" width="220" height="110" class="card"/><image href="icons/azure/managed-identity.svg" x="80" y="1168" width="16" height="16"/><text x="96" y="1184" class="tx">Managed Identity</text><text x="96" y="1208" class="tx">tigarantias-dev-ca-mi</text>
-  <rect x="320" y="1150" width="220" height="110" class="card"/><image href="icons/azure/key-vault.svg" x="320" y="1168" width="16" height="16"/><text x="336" y="1184" class="tx">Key Vault</text><text x="336" y="1208" class="tx">tigarantiasdevtgd1kv</text>
-  <rect x="560" y="1150" width="220" height="110" class="card"/><image href="icons/azure/storage-account.svg" x="560" y="1168" width="16" height="16"/><text x="576" y="1184" class="tx">Storage</text><text x="576" y="1208" class="tx">tigarantiasdevtgd1st</text>
-  <rect x="800" y="1150" width="220" height="110" class="card"/><image href="icons/azure/log-analytics.svg" x="800" y="1168" width="16" height="16"/><text x="816" y="1184" class="tx">Log Analytics</text><text x="816" y="1208" class="tx">tigarantias-dev-law</text>
-  <rect x="1040" y="1150" width="220" height="110" class="card"/><image href="icons/azure/container-app-env.svg" x="1040" y="1168" width="16" height="16"/><text x="1056" y="1184" class="tx">Managed Env</text><text x="1056" y="1208" class="tx">tigarantias-dev-cae</text>
-  <rect x="1280" y="1150" width="220" height="110" class="card"/><image href="icons/azure/container-app.svg" x="1280" y="1168" width="16" height="16"/><text x="1296" y="1184" class="tx">Container App FE</text><text x="1296" y="1208" class="tx">tigarantias-dev-fe</text>
-  <rect x="1520" y="1150" width="190" height="110" class="card"/><image href="icons/azure/container-app.svg" x="1520" y="1168" width="16" height="16"/><text x="1536" y="1184" class="tx">Container App BE</text><text x="1536" y="1208" class="tx">tigarantias-dev-be</text>
+  <text x="70" y="1122" class="h2">RG de aplicacion: tigarantias-{env}-rg</text>
+  <rect x="80" y="1150" width="220" height="110" class="card"/><image href="icons/azure/managed-identity.svg" x="80" y="1168" width="16" height="16"/><text x="96" y="1184" class="tx">Managed Identity</text><text x="96" y="1208" class="tx">tigarantias-{env}-ca-mi</text>
+  <rect x="320" y="1150" width="220" height="110" class="card"/><image href="icons/azure/key-vault.svg" x="320" y="1168" width="16" height="16"/><text x="336" y="1184" class="tx">Key Vault</text><text x="336" y="1208" class="tx">tigarantias{env}{suffix}kv</text>
+  <rect x="560" y="1150" width="220" height="110" class="card"/><image href="icons/azure/storage-account.svg" x="560" y="1168" width="16" height="16"/><text x="576" y="1184" class="tx">Storage</text><text x="576" y="1208" class="tx">tigarantias{env}{suffix}st</text>
+  <rect x="800" y="1150" width="220" height="110" class="card"/><image href="icons/azure/log-analytics.svg" x="800" y="1168" width="16" height="16"/><text x="816" y="1184" class="tx">Log Analytics</text><text x="816" y="1208" class="tx">tigarantias-{env}-law</text>
+  <rect x="1040" y="1140" width="670" height="130" class="sec" fill="#eef8ff"/>
+  <image href="icons/azure/container-app-env.svg" x="1050" y="1158" width="16" height="16"/>
+  <text x="1068" y="1174" class="tx">Managed Environment</text>
+  <text x="1068" y="1198" class="tx">tigarantias-{env}-cae</text>
+  <rect x="1270" y="1162" width="180" height="82" class="card"/><image href="icons/azure/container-app.svg" x="1278" y="1178" width="16" height="16"/><text x="1296" y="1194" class="tx">Container App FE</text><text x="1296" y="1218" class="tx">tigarantias-{env}-fe</text>
+  <rect x="1490" y="1162" width="180" height="82" class="card"/><image href="icons/azure/container-app.svg" x="1498" y="1178" width="16" height="16"/><text x="1516" y="1194" class="tx">Container App BE</text><text x="1516" y="1218" class="tx">tigarantias-{env}-be</text>
   <rect x="80" y="1280" width="700" height="120" class="card"/>
   <image href="icons/azure/postgresql.svg" x="80" y="1298" width="16" height="16"/>
-  <text x="98" y="1314" class="tx">PostgreSQL Flexible Server: tigarantias-dev-pg-tgd1</text>
+  <text x="98" y="1314" class="tx">PostgreSQL Flexible Server: tigarantias-{env}-pg-{suffix}</text>
   <text x="98" y="1338" class="tx">Cadena principal: FE -> BE -> PostgreSQL</text>
   <rect x="800" y="1280" width="910" height="120" class="card"/>
-  <text x="818" y="1314" class="tx">Control: MI -> KV -> secretos para BE/FE, CAE -> LAW (logs)</text>
-  <text x="818" y="1338" class="tx">Docker Hub suministra imagenes para despliegue de Container Apps</text>
+  <text x="818" y="1314" class="tx">Secretos: MI -> Key Vault -> FE/BE</text>
+  <text x="818" y="1338" class="tx">Logs: Managed Environment -> Log Analytics | Docker Hub suministra imagenes para Container Apps</text>
 
   <!-- Minimal clear links -->
   <path d="M600 355 L630 355" class="ar"/>
   <path d="M1150 600 L1180 600" class="ar"/>
   <path d="M1380 830 L1400 830" class="ar"/>
-  <path d="M1260 1208 L1280 1208" class="ar"/>
-  <path d="M1500 1208 L1520 1208" class="ar"/>
+  <path d="M1450 1203 L1490 1203" class="ar"/>
 
   <rect x="50" y="1460" width="1700" height="120" class="card"/>
   <text x="70" y="1494" class="h2">Leyenda Informativa</text>
   <text x="70" y="1518" class="tx">Cada bloque representa un Resource Group y sus recursos listados.</text>
   <text x="70" y="1542" class="tx">Flechas: relaciones principales detectadas entre recursos.</text>
-  <text x="70" y="1566" class="tx">Uso recomendado: inventario tecnico y validacion de alcance por RG.</text>
+  <text x="70" y="1566" class="tx">Patron multiambiente: {env} = dev | test | prod; {suffix} = sufijo unico por ambiente.</text>
+  <text x="980" y="1566" class="tx">Uso recomendado: inventario tecnico y validacion de alcance por RG.</text>
 
 </svg>
