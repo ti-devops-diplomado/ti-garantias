@@ -91,6 +91,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
           </div>
         </form>
 
+        <div class="table-wrap desktop-only">
         <table>
           <thead>
             <tr>
@@ -135,6 +136,46 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
             </tr>
           </tbody>
         </table>
+        </div>
+
+        <div class="cards mobile-only">
+          <article class="invoice" *ngFor="let item of invoices()">
+            <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
+            <p>{{ item.supplierName }}</p>
+            <p>{{ invoiceContractLabel(item) }}</p>
+            <div class="detail-grid">
+              <p><strong>Inicio:</strong> {{ item.invoiceDate }}</p>
+              <p><strong>Vencimiento:</strong> {{ item.estimatedRefundDate || 'Pendiente' }}</p>
+              <p><strong>OC:</strong> {{ item.purchaseOrder || 'Sin OC' }}</p>
+              <p><strong>Retenido:</strong> {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
+              <p><strong>Gestor:</strong> {{ item.refundManagerName || 'Sin asignar' }}</p>
+              <p><strong>Adjuntos:</strong> {{ item.attachments.length }}</p>
+            </div>
+            <div class="attachments" *ngIf="item.attachments.length; else noManagedAttachments">
+              <strong>Adjuntos</strong>
+              <button *ngFor="let attachment of item.attachments"
+                      type="button"
+                      class="attachment-link"
+                      (click)="previewAttachment(attachment.id, attachment.originalFileName)">
+                {{ attachment.originalFileName }}
+              </button>
+            </div>
+            <ng-template #noManagedAttachments>
+              <small>Sin adjuntos</small>
+            </ng-template>
+            <div class="actions mobile-actions">
+              <button mat-stroked-button type="button" (click)="startEdit(item)">
+                {{ scope === 'managed' ? 'Completar datos' : 'Editar' }}
+              </button>
+              <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
+              <label class="upload-action">
+                <span>Adjuntar</span>
+                <input type="file" (change)="upload(item.id, $event)" />
+              </label>
+            </div>
+          </article>
+          <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
+        </div>
       </mat-card>
     </ng-container>
 
@@ -168,6 +209,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
   `,
   styles: [`
     form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -179,12 +221,25 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
     .cards { display: grid; gap: 12px; }
     .invoice { padding: 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff; }
     .invoice h3, .invoice p { margin: 0 0 8px; }
+    .detail-grid { display: grid; gap: 6px; margin: 12px 0; }
     .attachments { display: grid; gap: 6px; margin-top: 12px; }
     .attachment-link { border: 0; padding: 0; background: transparent; color: #17324d; text-align: left; cursor: pointer; font: inherit; }
     .attachment-link:hover { text-decoration: underline; }
+    .mobile-only { display: none; }
     @media (max-width: 960px) {
       form { grid-template-columns: 1fr; }
-      table { display: block; overflow-x: auto; }
+      .desktop-only { display: none; }
+      .mobile-only { display: grid; }
+      .form-actions,
+      .mobile-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .actions button,
+      .upload-action {
+        width: 100%;
+        justify-content: center;
+      }
     }
   `]
 })

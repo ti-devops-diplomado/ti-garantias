@@ -27,6 +27,7 @@ import { UserSummary } from '../core/models';
       </form>
       <p class="message" *ngIf="message()">{{ message() }}</p>
 
+      <div class="table-wrap desktop-only">
       <table>
         <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Roles</th><th>Acciones</th></tr></thead>
         <tbody>
@@ -44,15 +45,48 @@ import { UserSummary } from '../core/models';
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <div class="mobile-only user-cards">
+        <article class="user-card" *ngFor="let item of users()">
+          <h3>{{ item.fullName }}</h3>
+          <p>{{ item.email }}</p>
+          <p><strong>Estado:</strong> {{ item.isActive ? 'Activo' : 'Inactivo' }}</p>
+          <p><strong>Roles:</strong> {{ item.roles.join(', ') }}</p>
+          <div class="actions mobile-actions">
+            <button mat-stroked-button type="button" (click)="toggleStatus(item)">
+              {{ item.isActive ? 'Desactivar' : 'Activar' }}
+            </button>
+            <button mat-stroked-button type="button" (click)="resetPassword(item)">Resetear clave</button>
+          </div>
+        </article>
+      </div>
       <p class="hint">El reseteo asigna la clave temporal <code>Temporal123!</code>.</p>
     </mat-card>
   `,
   styles: [`
     form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .message, .hint { margin-top: 12px; }
+    .mobile-only { display: none; }
+    .user-cards { display: grid; gap: 12px; }
+    .user-card { padding: 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff; }
+    .user-card h3, .user-card p { margin: 0 0 8px; }
+    @media (max-width: 960px) {
+      form { grid-template-columns: 1fr; }
+      .desktop-only { display: none; }
+      .mobile-only { display: grid; }
+      .mobile-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .mobile-actions button {
+        width: 100%;
+      }
+    }
   `]
 })
 export class UsersPageComponent {

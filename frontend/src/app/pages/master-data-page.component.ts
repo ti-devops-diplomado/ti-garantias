@@ -104,6 +104,20 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
     .actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .item-list { list-style: none; padding-left: 0; }
     .item-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+      .actions { display: grid; grid-template-columns: 1fr; }
+      .actions button { width: 100%; }
+      .item-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid #ece7dc;
+      }
+      .item-list li button {
+        width: 100%;
+      }
+    }
   `]
 })
 export class MasterDataPageComponent {
