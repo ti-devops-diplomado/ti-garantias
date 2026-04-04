@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,75 +21,38 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
   template: `
     <ng-container *ngIf="scope !== 'mine'; else mineLayout">
       <mat-card>
-        <h2>{{ title }}</h2>
-        <p class="section-help" *ngIf="scope === 'managed'">
-          Completa y gestiona las facturas asignadas desde la misma vista, con el mismo formato operativo del listado general de facturas.
-        </p>
-        <form [formGroup]="form" (ngSubmit)="saveInvoice()">
+        <div class="section-header">
+          <div>
+            <h2>{{ title }}</h2>
+            <p class="section-help" *ngIf="scope === 'managed'">
+              Completa y gestiona las facturas asignadas desde la misma vista, con el mismo formato operativo del listado general de facturas.
+            </p>
+          </div>
+          <button mat-flat-button color="primary" type="button" *ngIf="canCreateInvoices" (click)="openCreateModal()">
+            Nueva factura
+          </button>
+        </div>
+
+        <div class="filters">
+          <mat-form-field appearance="outline">
+            <mat-label>Buscar</mat-label>
+            <input matInput [value]="searchTerm()" (input)="updateSearchTerm($event)" placeholder="Factura, proveedor o contrato" />
+          </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Proveedor</mat-label>
-            <mat-select formControlName="supplierId">
+            <mat-select [value]="supplierFilter()" (selectionChange)="supplierFilter.set($event.value || '')">
+              <mat-option value="">Todos</mat-option>
               <mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option>
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Contrato</mat-label>
-            <mat-select formControlName="contractId">
-              <mat-option *ngFor="let item of filteredContracts()" [value]="item.id">{{ contractLabel(item) }}</mat-option>
+            <mat-label>Estado</mat-label>
+            <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value || '')">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let item of availableStatuses()" [value]="item">{{ item }}</mat-option>
             </mat-select>
           </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Factura</mat-label>
-            <input matInput formControlName="invoiceNumber" placeholder="999-999-999999999" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Fecha inicio</mat-label>
-            <input
-              matInput
-              [matDatepicker]="invoiceDatePicker"
-              formControlName="invoiceDate"
-              placeholder="AAAA-MM-DD o DD/MM/AAAA" />
-            <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker"></mat-datepicker-toggle>
-            <mat-datepicker #invoiceDatePicker></mat-datepicker>
-            <mat-error *ngIf="form.controls.invoiceDate.hasError('required')">
-              La fecha de inicio es obligatoria.
-            </mat-error>
-            <mat-error *ngIf="form.controls.invoiceDate.hasError('matDatepickerParse') || form.controls.invoiceDate.hasError('invalidDate')">
-              Ingresa una fecha valida en formato AAAA-MM-DD o DD/MM/AAAA, o seleccionala en el calendario.
-            </mat-error>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Fecha vencimiento</mat-label>
-            <input matInput formControlName="estimatedRefundDate" readonly />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Valor factura</mat-label>
-            <input matInput type="number" formControlName="invoiceAmount" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>OC</mat-label>
-            <input matInput formControlName="purchaseOrder" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Valor retenido</mat-label>
-            <input matInput type="number" formControlName="retainedAmount" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Entregables</mat-label>
-            <mat-select formControlName="deliverableIds" multiple>
-              <mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
-          <div class="form-actions">
-            <button mat-flat-button color="primary" type="submit" [disabled]="scope === 'managed' && !editingInvoiceId()">
-              {{ scope === 'managed' ? 'Guardar cambios' : submitLabel() }}
-            </button>
-            <button mat-stroked-button type="button" *ngIf="editingInvoiceId()" (click)="cancelEdit()">
-              {{ scope === 'managed' ? 'Cancelar' : 'Cancelar edición' }}
-            </button>
-          </div>
-        </form>
+        </div>
 
         <div class="table-wrap desktop-only">
         <table>
@@ -109,7 +72,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of invoices()">
+            <tr *ngFor="let item of filteredInvoices()">
               <td>{{ item.invoiceNumber }}</td>
               <td>{{ item.supplierName }}</td>
               <td>{{ invoiceContractLabel(item) }}</td>
@@ -121,17 +84,17 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
               <td>{{ item.refundManagerName || 'Sin asignar' }}</td>
               <td>{{ item.attachments.length }}</td>
               <td class="actions">
-                <button mat-stroked-button type="button" (click)="startEdit(item)">
+                <button mat-stroked-button type="button" *ngIf="canEditInvoices" (click)="startEdit(item)">
                   {{ scope === 'managed' ? 'Completar datos' : 'Editar' }}
                 </button>
-                <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
+                <button mat-stroked-button type="button" *ngIf="canManageInvoices && !isManaged(item)" (click)="manage(item)">Marcar gestión</button>
                 <label class="upload-action">
                   <span>Adjuntar</span>
                   <input type="file" (change)="upload(item.id, $event)" />
                 </label>
               </td>
             </tr>
-            <tr *ngIf="!invoices().length">
+            <tr *ngIf="!filteredInvoices().length">
               <td colspan="11" class="empty">No hay registros para mostrar.</td>
             </tr>
           </tbody>
@@ -139,7 +102,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
         </div>
 
         <div class="cards mobile-only">
-          <article class="invoice" *ngFor="let item of invoices()">
+          <article class="invoice" *ngFor="let item of filteredInvoices()">
             <h3>{{ item.invoiceNumber }} · {{ item.status }}</h3>
             <p>{{ item.supplierName }}</p>
             <p>{{ invoiceContractLabel(item) }}</p>
@@ -164,19 +127,99 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
               <small>Sin adjuntos</small>
             </ng-template>
             <div class="actions mobile-actions">
-              <button mat-stroked-button type="button" (click)="startEdit(item)">
+              <button mat-stroked-button type="button" *ngIf="canEditInvoices" (click)="startEdit(item)">
                 {{ scope === 'managed' ? 'Completar datos' : 'Editar' }}
               </button>
-              <button mat-stroked-button type="button" *ngIf="canManageInvoices && item.status !== 'GESTIONADA'" (click)="manage(item)">Marcar gestión</button>
+              <button mat-stroked-button type="button" *ngIf="canManageInvoices && !isManaged(item)" (click)="manage(item)">Marcar gestión</button>
               <label class="upload-action">
                 <span>Adjuntar</span>
                 <input type="file" (change)="upload(item.id, $event)" />
               </label>
             </div>
           </article>
-          <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
+          <p class="empty" *ngIf="!filteredInvoices().length">No hay registros para mostrar.</p>
         </div>
       </mat-card>
+
+      <div class="modal-shell" *ngIf="showFormModal()" (click)="cancelEdit()">
+        <mat-card class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <h2>{{ editingInvoiceId() ? (scope === 'managed' ? 'Completar factura' : 'Editar factura') : 'Nueva factura' }}</h2>
+              <p>{{ scope === 'managed' ? 'Actualiza la información pendiente sin salir del listado.' : 'Completa los datos de la factura en una ventana superpuesta.' }}</p>
+            </div>
+            <button mat-icon-button type="button" (click)="cancelEdit()" aria-label="Cerrar formulario">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="saveInvoice()">
+            <mat-form-field appearance="outline">
+              <mat-label>Proveedor</mat-label>
+              <mat-select formControlName="supplierId">
+                <mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Contrato</mat-label>
+              <mat-select formControlName="contractId">
+                <mat-option *ngFor="let item of filteredContracts()" [value]="item.id">{{ contractLabel(item) }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Factura</mat-label>
+              <input matInput formControlName="invoiceNumber" placeholder="999-999-999999999" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha inicio</mat-label>
+              <input
+                matInput
+                [matDatepicker]="invoiceDatePicker"
+                formControlName="invoiceDate"
+                placeholder="AAAA-MM-DD o DD/MM/AAAA" />
+              <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #invoiceDatePicker></mat-datepicker>
+              <mat-error *ngIf="form.controls.invoiceDate.hasError('required')">
+                La fecha de inicio es obligatoria.
+              </mat-error>
+              <mat-error *ngIf="form.controls.invoiceDate.hasError('matDatepickerParse') || form.controls.invoiceDate.hasError('invalidDate')">
+                Ingresa una fecha valida en formato AAAA-MM-DD o DD/MM/AAAA, o seleccionala en el calendario.
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha vencimiento</mat-label>
+              <input matInput formControlName="estimatedRefundDate" readonly />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Valor factura</mat-label>
+              <input matInput type="number" formControlName="invoiceAmount" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>OC</mat-label>
+              <input matInput formControlName="purchaseOrder" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Valor retenido</mat-label>
+              <input matInput type="number" formControlName="retainedAmount" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Entregables</mat-label>
+              <mat-select formControlName="deliverableIds" multiple>
+                <mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
+            <div class="form-actions">
+              <button mat-flat-button color="primary" type="submit">
+                {{ scope === 'managed' ? 'Guardar cambios' : submitLabel() }}
+              </button>
+              <button mat-stroked-button type="button" (click)="cancelEdit()">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </mat-card>
+      </div>
     </ng-container>
 
     <ng-template #mineLayout>
@@ -208,6 +251,19 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
     </ng-template>
   `,
   styles: [`
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
     form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
@@ -226,8 +282,46 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
     .attachment-link { border: 0; padding: 0; background: transparent; color: #17324d; text-align: left; cursor: pointer; font: inherit; }
     .attachment-link:hover { text-decoration: underline; }
     .mobile-only { display: none; }
+    .modal-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(15, 24, 35, 0.44);
+    }
+    .modal-card {
+      width: min(1040px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+    }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .modal-header h2,
+    .modal-header p {
+      margin: 0;
+    }
+    .modal-header p {
+      margin-top: 6px;
+      color: #566573;
+    }
     @media (max-width: 960px) {
-      form { grid-template-columns: 1fr; }
+      .section-header,
+      .modal-header,
+      form,
+      .filters {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+      .section-header {
+        align-items: stretch;
+      }
       .desktop-only { display: none; }
       .mobile-only { display: grid; }
       .form-actions,
@@ -239,6 +333,13 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
       .upload-action {
         width: 100%;
         justify-content: center;
+      }
+      .modal-shell {
+        padding: 12px;
+        align-items: end;
+      }
+      .modal-card {
+        max-height: min(88vh, 100%);
       }
     }
   `]
@@ -254,11 +355,35 @@ export class InvoicesPageComponent {
   readonly deliverables = signal<Deliverable[]>([]);
   readonly invoices = signal<InvoiceItem[]>([]);
   readonly editingInvoiceId = signal<string | null>(null);
+  readonly showFormModal = signal(false);
+  readonly searchTerm = signal('');
+  readonly supplierFilter = signal('');
+  readonly statusFilter = signal('');
   readonly scope = this.route.snapshot.data['scope'] as string ?? 'all';
   readonly title = this.scope === 'mine' ? 'Mis registros' : this.scope === 'managed' ? 'Pendientes por gestionar' : 'Facturas';
-  readonly canCreateInvoices = this.auth.hasAnyRole(['Registrador', 'Admin']);
+  readonly canCreateInvoices = this.scope === 'all' && this.auth.hasAnyRole(['Registrador', 'Admin']);
   readonly canManageInvoices = this.auth.hasAnyRole(['Gestor', 'Admin']);
-  readonly canEditInvoices = this.auth.hasAnyRole(['Registrador', 'Gestor', 'Admin']);
+  readonly canEditInvoices = this.scope !== 'mine' && this.auth.hasAnyRole(['Registrador', 'Gestor', 'Admin']);
+  readonly availableStatuses = computed(() => Array.from(new Set(this.invoices().map(item => item.status))).sort());
+  readonly filteredInvoices = computed(() => {
+    const search = this.searchTerm().trim().toLowerCase();
+    const supplierId = this.supplierFilter();
+    const status = this.statusFilter();
+
+    return this.invoices().filter(item => {
+      const matchesSearch = !search || [
+        item.invoiceNumber,
+        item.supplierName,
+        item.contractNumber,
+        item.contractTitle,
+        item.purchaseOrder,
+        item.refundManagerName ?? ''
+      ].some(value => value.toLowerCase().includes(search));
+      const matchesSupplier = !supplierId || item.supplierId === supplierId;
+      const matchesStatus = !status || item.status === status;
+      return matchesSearch && matchesSupplier && matchesStatus;
+    });
+  });
 
   readonly form = this.fb.nonNullable.group({
     supplierId: ['', Validators.required],
@@ -300,6 +425,12 @@ export class InvoicesPageComponent {
     return this.editingInvoiceId() ? 'Guardar cambios' : 'Guardar factura';
   }
 
+  openCreateModal() {
+    this.editingInvoiceId.set(null);
+    this.resetFormForCreate();
+    this.showFormModal.set(true);
+  }
+
   startEdit(item: InvoiceItem) {
     this.editingInvoiceId.set(item.id);
     this.form.reset({
@@ -315,11 +446,17 @@ export class InvoicesPageComponent {
       deliverableIds: item.deliverableIds
     }, { emitEvent: false });
     this.recalculateEstimatedRefundDate();
+    this.showFormModal.set(true);
   }
 
   cancelEdit() {
     this.editingInvoiceId.set(null);
+    this.showFormModal.set(false);
     this.resetFormForCreate();
+  }
+
+  updateSearchTerm(event: Event) {
+    this.searchTerm.set((event.target as HTMLInputElement).value);
   }
 
   saveInvoice() {
@@ -347,13 +484,8 @@ export class InvoicesPageComponent {
       ...rawValue,
       invoiceDate,
       estimatedRefundDate
-    }, editingInvoiceId ?? undefined).subscribe(saved => {
-      if (editingInvoiceId) {
-        this.reload(saved.id);
-        return;
-      }
-
-      this.resetFormForCreate();
+    }, editingInvoiceId ?? undefined).subscribe(() => {
+      this.cancelEdit();
       this.reload();
     });
   }
@@ -371,7 +503,7 @@ export class InvoicesPageComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.api.uploadAttachment(id, file).subscribe(() => this.reload(id));
+    this.api.uploadAttachment(id, file).subscribe(() => this.reload());
   }
 
   previewAttachment(attachmentId: string, fileName: string) {
@@ -402,19 +534,11 @@ export class InvoicesPageComponent {
         this.cancelEdit();
         return;
       }
-
-      if (preferredInvoiceId) {
-        const preferredInvoice = data.find(item => item.id === preferredInvoiceId);
-        if (preferredInvoice) {
-          this.startEdit(preferredInvoice);
-          return;
-        }
-      }
-
-      if (this.scope === 'managed') {
-        this.startEdit(data[0]);
-      }
     });
+  }
+
+  isManaged(item: InvoiceItem) {
+    return item.status.toLowerCase() === 'gestionada';
   }
 
   private recalculateEstimatedRefundDate() {

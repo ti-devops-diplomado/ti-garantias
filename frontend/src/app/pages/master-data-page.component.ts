@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,18 +18,16 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
   template: `
     <section class="grid">
       <mat-card>
-        <h2>Proveedores</h2>
-        <form [formGroup]="supplierForm" (ngSubmit)="saveSupplier()">
-          <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="name" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>NIT / ID</mat-label><input matInput formControlName="taxId" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Correo</mat-label><input matInput formControlName="contactEmail" /></mat-form-field>
-          <div class="actions">
-            <button mat-flat-button color="primary" type="submit">{{ editingSupplierId() ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
-            <button *ngIf="editingSupplierId()" mat-stroked-button type="button" (click)="cancelSupplierEdit()">Cancelar</button>
-          </div>
-        </form>
+        <div class="card-header">
+          <h2>Proveedores</h2>
+          <button mat-flat-button color="primary" type="button" (click)="openSupplierModal()">Nuevo proveedor</button>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar proveedor</mat-label>
+          <input matInput [value]="supplierSearch()" (input)="updateSupplierSearch($event)" />
+        </mat-form-field>
         <ul class="item-list">
-          <li *ngFor="let item of suppliers()">
+          <li *ngFor="let item of filteredSuppliers()">
             <span>{{ item.name }} - {{ item.taxId }}</span>
             <button mat-button type="button" (click)="editSupplier(item)">Editar</button>
           </li>
@@ -37,7 +35,67 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
       </mat-card>
 
       <mat-card>
-        <h2>Contratos</h2>
+        <div class="card-header">
+          <h2>Contratos</h2>
+          <button mat-flat-button color="primary" type="button" (click)="openContractModal()">Nuevo contrato</button>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar contrato</mat-label>
+          <input matInput [value]="contractSearch()" (input)="updateContractSearch($event)" />
+        </mat-form-field>
+        <ul class="item-list">
+          <li *ngFor="let item of filteredContracts()">
+            <span>{{ item.contractNumber }} - {{ item.title }} / {{ getSupplierName(item.supplierId) }}</span>
+            <button mat-button type="button" (click)="editContract(item)">Editar</button>
+          </li>
+        </ul>
+      </mat-card>
+
+      <mat-card>
+        <div class="card-header">
+          <h2>Entregables</h2>
+          <button mat-flat-button color="primary" type="button" (click)="openDeliverableModal()">Nuevo entregable</button>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar entregable</mat-label>
+          <input matInput [value]="deliverableSearch()" (input)="updateDeliverableSearch($event)" />
+        </mat-form-field>
+        <ul class="item-list">
+          <li *ngFor="let item of filteredDeliverables()">
+            <span>{{ item.name }} / {{ getContractTitle(item.contractId) }}</span>
+          </li>
+        </ul>
+      </mat-card>
+    </section>
+
+    <div class="modal-shell" *ngIf="showSupplierModal()" (click)="cancelSupplierEdit()">
+      <mat-card class="modal-card" (click)="$event.stopPropagation()">
+        <div class="card-header modal-header">
+          <h2>{{ editingSupplierId() ? 'Editar proveedor' : 'Nuevo proveedor' }}</h2>
+          <button mat-icon-button type="button" (click)="cancelSupplierEdit()" aria-label="Cerrar formulario">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <form [formGroup]="supplierForm" (ngSubmit)="saveSupplier()">
+          <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="name" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>NIT / ID</mat-label><input matInput formControlName="taxId" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Correo</mat-label><input matInput formControlName="contactEmail" /></mat-form-field>
+          <div class="actions">
+            <button mat-flat-button color="primary" type="submit">{{ editingSupplierId() ? 'Actualizar proveedor' : 'Guardar proveedor' }}</button>
+            <button mat-stroked-button type="button" (click)="cancelSupplierEdit()">Cancelar</button>
+          </div>
+        </form>
+      </mat-card>
+    </div>
+
+    <div class="modal-shell" *ngIf="showContractModal()" (click)="cancelContractEdit()">
+      <mat-card class="modal-card" (click)="$event.stopPropagation()">
+        <div class="card-header modal-header">
+          <h2>{{ editingContractId() ? 'Editar contrato' : 'Nuevo contrato' }}</h2>
+          <button mat-icon-button type="button" (click)="cancelContractEdit()" aria-label="Cerrar formulario">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
         <form [formGroup]="contractForm" (ngSubmit)="saveContract()">
           <mat-form-field appearance="outline"><mat-label>Proveedor</mat-label><mat-select formControlName="supplierId"><mat-option *ngFor="let item of suppliers()" [value]="item.id">{{ item.name }}</mat-option></mat-select></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Número contrato</mat-label><input matInput formControlName="contractNumber" /></mat-form-field>
@@ -74,28 +132,31 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
           <mat-form-field appearance="outline"><mat-label>% retención</mat-label><input matInput type="number" min="0" step="0.01" formControlName="retentionPercentage" /></mat-form-field>
           <div class="actions">
             <button mat-flat-button color="primary" type="submit">{{ editingContractId() ? 'Actualizar contrato' : 'Guardar contrato' }}</button>
-            <button *ngIf="editingContractId()" mat-stroked-button type="button" (click)="cancelContractEdit()">Cancelar</button>
+            <button mat-stroked-button type="button" (click)="cancelContractEdit()">Cancelar</button>
           </div>
         </form>
-        <ul class="item-list">
-          <li *ngFor="let item of contracts()">
-            <span>{{ item.contractNumber }} - {{ item.title }} / {{ getSupplierName(item.supplierId) }}</span>
-            <button mat-button type="button" (click)="editContract(item)">Editar</button>
-          </li>
-        </ul>
       </mat-card>
+    </div>
 
-      <mat-card>
-        <h2>Entregables</h2>
+    <div class="modal-shell" *ngIf="showDeliverableModal()" (click)="cancelDeliverableEdit()">
+      <mat-card class="modal-card" (click)="$event.stopPropagation()">
+        <div class="card-header modal-header">
+          <h2>Nuevo entregable</h2>
+          <button mat-icon-button type="button" (click)="cancelDeliverableEdit()" aria-label="Cerrar formulario">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
         <form [formGroup]="deliverableForm" (ngSubmit)="saveDeliverable()">
           <mat-form-field appearance="outline"><mat-label>Contrato</mat-label><mat-select formControlName="contractId"><mat-option *ngFor="let item of contracts()" [value]="item.id">{{ item.title }}</mat-option></mat-select></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="name" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Descripción</mat-label><input matInput formControlName="description" /></mat-form-field>
-          <button mat-flat-button color="primary" type="submit">Guardar entregable</button>
+          <div class="actions">
+            <button mat-flat-button color="primary" type="submit">Guardar entregable</button>
+            <button mat-stroked-button type="button" (click)="cancelDeliverableEdit()">Cancelar</button>
+          </div>
         </form>
-        <ul><li *ngFor="let item of deliverables()">{{ item.name }}</li></ul>
       </mat-card>
-    </section>
+    </div>
   `,
   styles: [`
     .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
@@ -104,8 +165,36 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
     .actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .item-list { list-style: none; padding-left: 0; }
     .item-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .card-header h2 { margin: 0; }
+    .modal-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(15, 24, 35, 0.44);
+    }
+    .modal-card {
+      width: min(760px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+    }
+    .modal-header { margin-bottom: 0; }
     @media (max-width: 960px) {
       .grid { grid-template-columns: 1fr; }
+      .card-header,
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
       .actions { display: grid; grid-template-columns: 1fr; }
       .actions button { width: 100%; }
       .item-list li {
@@ -116,6 +205,13 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
       }
       .item-list li button {
         width: 100%;
+      }
+      .modal-shell {
+        padding: 12px;
+        align-items: end;
+      }
+      .modal-card {
+        max-height: min(88vh, 100%);
       }
     }
   `]
@@ -129,6 +225,24 @@ export class MasterDataPageComponent {
   readonly deliverables = signal<Deliverable[]>([]);
   readonly editingSupplierId = signal<string | null>(null);
   readonly editingContractId = signal<string | null>(null);
+  readonly showSupplierModal = signal(false);
+  readonly showContractModal = signal(false);
+  readonly showDeliverableModal = signal(false);
+  readonly supplierSearch = signal('');
+  readonly contractSearch = signal('');
+  readonly deliverableSearch = signal('');
+  readonly filteredSuppliers = computed(() => {
+    const search = this.supplierSearch().trim().toLowerCase();
+    return this.suppliers().filter(item => !search || [item.name, item.taxId, item.contactEmail].some(value => value.toLowerCase().includes(search)));
+  });
+  readonly filteredContracts = computed(() => {
+    const search = this.contractSearch().trim().toLowerCase();
+    return this.contracts().filter(item => !search || [item.contractNumber, item.title, this.getSupplierName(item.supplierId)].some(value => value.toLowerCase().includes(search)));
+  });
+  readonly filteredDeliverables = computed(() => {
+    const search = this.deliverableSearch().trim().toLowerCase();
+    return this.deliverables().filter(item => !search || [item.name, item.description, this.getContractTitle(item.contractId)].some(value => value.toLowerCase().includes(search)));
+  });
 
   readonly supplierForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
@@ -155,6 +269,23 @@ export class MasterDataPageComponent {
     this.reload();
   }
 
+  openSupplierModal() {
+    this.resetSupplierForm();
+    this.showSupplierModal.set(true);
+  }
+
+  updateSupplierSearch(event: Event) {
+    this.supplierSearch.set((event.target as HTMLInputElement).value);
+  }
+
+  updateContractSearch(event: Event) {
+    this.contractSearch.set((event.target as HTMLInputElement).value);
+  }
+
+  updateDeliverableSearch(event: Event) {
+    this.deliverableSearch.set((event.target as HTMLInputElement).value);
+  }
+
   saveSupplier() {
     if (this.supplierForm.invalid) return;
     const request = this.supplierForm.getRawValue();
@@ -166,12 +297,14 @@ export class MasterDataPageComponent {
 
     action.subscribe(() => {
       this.resetSupplierForm();
+      this.showSupplierModal.set(false);
       this.reload();
     });
   }
 
   editSupplier(supplier: Supplier) {
     this.editingSupplierId.set(supplier.id);
+    this.showSupplierModal.set(true);
     this.supplierForm.reset({
       name: supplier.name,
       taxId: supplier.taxId,
@@ -181,6 +314,12 @@ export class MasterDataPageComponent {
 
   cancelSupplierEdit() {
     this.resetSupplierForm();
+    this.showSupplierModal.set(false);
+  }
+
+  openContractModal() {
+    this.resetContractForm();
+    this.showContractModal.set(true);
   }
 
   saveContract() {
@@ -218,12 +357,14 @@ export class MasterDataPageComponent {
 
     action.subscribe(() => {
       this.resetContractForm();
+      this.showContractModal.set(false);
       this.reload();
     });
   }
 
   editContract(contract: ContractItem) {
     this.editingContractId.set(contract.id);
+    this.showContractModal.set(true);
     this.contractForm.reset({
       supplierId: contract.supplierId,
       contractNumber: contract.contractNumber,
@@ -236,14 +377,26 @@ export class MasterDataPageComponent {
 
   cancelContractEdit() {
     this.resetContractForm();
+    this.showContractModal.set(false);
+  }
+
+  openDeliverableModal() {
+    this.deliverableForm.reset({ contractId: '', name: '', description: '' });
+    this.showDeliverableModal.set(true);
   }
 
   saveDeliverable() {
     if (this.deliverableForm.invalid) return;
     this.api.createDeliverable(this.deliverableForm.getRawValue()).subscribe(() => {
       this.deliverableForm.reset({ contractId: '', name: '', description: '' });
+      this.showDeliverableModal.set(false);
       this.reload();
     });
+  }
+
+  cancelDeliverableEdit() {
+    this.deliverableForm.reset({ contractId: '', name: '', description: '' });
+    this.showDeliverableModal.set(false);
   }
 
   private reload() {
@@ -271,6 +424,10 @@ export class MasterDataPageComponent {
 
   getSupplierName(supplierId: string) {
     return this.suppliers().find(item => item.id === supplierId)?.name ?? 'Proveedor no encontrado';
+  }
+
+  getContractTitle(contractId: string) {
+    return this.contracts().find(item => item.id === contractId)?.title ?? 'Contrato no encontrado';
   }
 
   private normalizeOptionalDateValue(value: Date | string | null): string | null {
