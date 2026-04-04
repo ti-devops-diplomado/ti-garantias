@@ -54,7 +54,7 @@ import { FeedbackService } from '../core/feedback.service';
         <mat-card class="surface-card login-card">
           <p class="login-card__eyebrow">Acceso seguro</p>
           <h2>Ingresa a TI Garantias</h2>
-          <p class="login-card__copy">Usa las credenciales de demostracion para explorar la aplicacion.</p>
+          <p class="login-card__copy">Ingresa con tus credenciales para acceder al portal.</p>
 
           <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
             <mat-form-field appearance="outline" class="field-span-full">
@@ -68,10 +68,6 @@ import { FeedbackService } from '../core/feedback.service';
             </mat-form-field>
 
             <div class="login-card__footer field-span-full">
-              <div>
-                <p class="hint-label">Acceso demo</p>
-                <p class="hint-value">admin@demo.local / AdminTemporal123!</p>
-              </div>
               <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || loading()">
                 {{ loading() ? 'Ingresando...' : 'Ingresar' }}
               </button>
@@ -133,8 +129,6 @@ import { FeedbackService } from '../core/feedback.service';
     .login-story__copy,
     .login-card h2,
     .login-card__copy,
-    .hint-label,
-    .hint-value,
     .error {
       margin: 0;
     }
@@ -209,27 +203,8 @@ import { FeedbackService } from '../core/feedback.service';
 
     .login-card__footer {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+      justify-content: flex-end;
       margin-top: 6px;
-      padding: 16px 18px;
-      border-radius: 20px;
-      background: rgba(245, 239, 230, 0.68);
-    }
-
-    .hint-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--color-ink-muted);
-      font-weight: 800;
-    }
-
-    .hint-value {
-      margin-top: 6px;
-      font-weight: 700;
-      color: var(--color-ink);
     }
 
     .error {
@@ -251,11 +226,6 @@ import { FeedbackService } from '../core/feedback.service';
       }
 
       .login-card__footer {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .login-card__footer button {
         width: 100%;
       }
     }
@@ -295,7 +265,7 @@ import { FeedbackService } from '../core/feedback.service';
       }
 
       .login-card__footer {
-        padding: 14px;
+        margin-top: 10px;
       }
     }
   `]
@@ -309,8 +279,8 @@ export class LoginPageComponent {
   readonly loading = signal(false);
   readonly error = signal('');
   readonly form = this.fb.nonNullable.group({
-    email: ['admin@demo.local', [Validators.required, Validators.email]],
-    password: ['AdminTemporal123!', Validators.required]
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required]
   });
 
   submit() {
