@@ -264,7 +264,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
       gap: 12px;
       margin-bottom: 20px;
     }
-    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
@@ -292,7 +292,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
       background: rgba(15, 24, 35, 0.44);
     }
     .modal-card {
-      width: min(1040px, 100%);
+      width: min(1160px, calc(100vw - 32px));
       max-height: calc(100vh - 48px);
       overflow: auto;
     }
@@ -307,9 +307,16 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
     .modal-header p {
       margin: 0;
     }
+    .modal-header > div {
+      min-width: 0;
+    }
     .modal-header p {
       margin-top: 6px;
       color: #566573;
+    }
+    .form-actions {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
     }
     @media (max-width: 960px) {
       .section-header,
@@ -339,7 +346,8 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
         align-items: end;
       }
       .modal-card {
-        max-height: min(88vh, 100%);
+        width: 100%;
+        max-height: min(90vh, 100%);
       }
     }
   `]

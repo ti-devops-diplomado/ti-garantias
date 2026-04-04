@@ -516,19 +516,19 @@ export class DashboardPageComponent {
         return [
           { label: 'Mis registros', route: '/mis-registros', hint: 'Ver mis facturas' },
           { label: 'Facturas', route: '/facturas', hint: 'Consultar todo el listado' },
-          { label: 'Catálogos', route: '/catalogos', hint: 'Actualizar maestros' }
+          { label: 'Catálogos', route: '/catalogos/proveedores', hint: 'Actualizar maestros' }
         ];
       case 'manager':
         return [
           { label: 'Pendientes', route: '/pendientes-gestion', hint: 'Gestionar facturas asignadas' },
-          { label: 'Catálogos', route: '/catalogos', hint: 'Consultar contratos y entregables' }
+          { label: 'Catálogos', route: '/catalogos/proveedores', hint: 'Consultar contratos y entregables' }
         ];
       case 'admin':
         return [
           { label: 'Facturas', route: '/facturas', hint: 'Vista global' },
           { label: 'Pendientes', route: '/pendientes-gestion', hint: 'Revisar gestión' },
           { label: 'Usuarios', route: '/admin/usuarios', hint: 'Administrar accesos' },
-          { label: 'Catálogos', route: '/catalogos', hint: 'Mantener maestros' }
+          { label: 'Catálogos', route: '/catalogos/proveedores', hint: 'Mantener maestros' }
         ];
       default:
         return [];

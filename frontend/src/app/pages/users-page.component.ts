@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../core/api.service';
@@ -13,7 +14,7 @@ import { UserSummary } from '../core/models';
 @Component({
   selector: 'app-users-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatCheckboxModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatCheckboxModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule],
   template: `
     <mat-card>
       <div class="section-header">
@@ -83,9 +84,12 @@ import { UserSummary } from '../core/models';
     <div class="modal-shell" *ngIf="showForm()" (click)="closeForm()">
       <mat-card class="modal-card" (click)="$event.stopPropagation()">
         <div class="section-header modal-header">
-          <h2>Nuevo usuario</h2>
+          <div>
+            <h2>Nuevo usuario</h2>
+            <p class="section-help">Crea el usuario desde una ventana más amplia y cómoda, sin perder el contexto del listado.</p>
+          </div>
           <button mat-icon-button type="button" (click)="closeForm()" aria-label="Cerrar formulario">
-            <span aria-hidden="true">×</span>
+            <mat-icon>close</mat-icon>
           </button>
         </div>
         <form [formGroup]="form" (ngSubmit)="save()">
@@ -122,6 +126,7 @@ import { UserSummary } from '../core/models';
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .message, .hint { margin-top: 12px; }
+    .section-help { margin: 6px 0 0; color: #566573; }
     .mobile-only { display: none; }
     .user-cards { display: grid; gap: 12px; }
     .user-card { padding: 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff; }
@@ -136,16 +141,22 @@ import { UserSummary } from '../core/models';
       background: rgba(15, 24, 35, 0.44);
     }
     .modal-card {
-      width: min(760px, 100%);
+      width: min(880px, calc(100vw - 32px));
       max-height: calc(100vh - 48px);
       overflow: auto;
     }
+    .modal-header h2 { margin: 0; }
     @media (max-width: 960px) {
       .section-header,
       form,
       .filters {
         display: grid;
         grid-template-columns: 1fr;
+      }
+      .modal-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: start;
       }
       .desktop-only { display: none; }
       .mobile-only { display: grid; }
@@ -161,7 +172,8 @@ import { UserSummary } from '../core/models';
         align-items: end;
       }
       .modal-card {
-        max-height: min(88vh, 100%);
+        width: 100%;
+        max-height: min(90vh, 100%);
       }
     }
   `]
