@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../core/api.service';
+import { FeedbackService } from '../core/feedback.service';
 import { ContractItem, Deliverable } from '../core/models';
 
 @Component({
@@ -15,7 +16,26 @@ import { ContractItem, Deliverable } from '../core/models';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule],
   template: `
-    <mat-card>
+    <section class="page-shell">
+      <section class="page-hero">
+        <div>
+          <p class="page-hero__eyebrow">Catalogos</p>
+          <h1 class="page-hero__title">Entregables</h1>
+          <p class="page-hero__subtitle">Gestiona entregables por contrato con una vista mas limpia y facil de escanear.</p>
+        </div>
+        <div class="hero-stat-grid">
+          <article class="hero-stat">
+            <p class="hero-stat__label">Entregables</p>
+            <p class="hero-stat__value">{{ deliverables().length }}</p>
+          </article>
+          <article class="hero-stat">
+            <p class="hero-stat__label">Visibles</p>
+            <p class="hero-stat__value">{{ filteredDeliverables().length }}</p>
+          </article>
+        </div>
+      </section>
+
+    <mat-card class="surface-card">
       <div class="section-header">
         <div>
           <h2>Catálogos · Entregables</h2>
@@ -31,7 +51,20 @@ import { ContractItem, Deliverable } from '../core/models';
         </mat-form-field>
       </div>
 
-      <div class="table-wrap desktop-only">
+      <div class="list-toolbar">
+        <p>{{ filteredDeliverables().length }} de {{ deliverables().length }} entregables visibles</p>
+        <button mat-button type="button" *ngIf="hasActiveFilters()" (click)="clearFilters()">Limpiar busqueda</button>
+      </div>
+
+      <div class="empty-panel" *ngIf="!filteredDeliverables().length">
+        <div>
+          <h3>{{ hasActiveFilters() ? 'No encontramos coincidencias' : 'Todavia no hay entregables' }}</h3>
+          <p>{{ hasActiveFilters() ? 'Prueba con otro nombre o contrato.' : 'Crea el primer entregable para completar el catalogo operativo.' }}</p>
+        </div>
+        <button mat-stroked-button type="button" *ngIf="hasActiveFilters()" (click)="clearFilters()">Ver todo</button>
+      </div>
+
+      <div class="table-wrap desktop-only" *ngIf="filteredDeliverables().length">
         <table>
           <thead>
             <tr>
@@ -46,31 +79,27 @@ import { ContractItem, Deliverable } from '../core/models';
               <td>{{ getContractLabel(item.contractId) }}</td>
               <td>{{ item.description || 'Sin descripción' }}</td>
             </tr>
-            <tr *ngIf="!filteredDeliverables().length">
-              <td colspan="3" class="empty">No hay entregables para mostrar.</td>
-            </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="cards mobile-only">
+      <div class="cards mobile-only" *ngIf="filteredDeliverables().length">
         <article class="item-card" *ngFor="let item of filteredDeliverables()">
           <h3>{{ item.name }}</h3>
           <p><strong>Contrato:</strong> {{ getContractLabel(item.contractId) }}</p>
           <p><strong>Descripción:</strong> {{ item.description || 'Sin descripción' }}</p>
         </article>
-        <p class="empty" *ngIf="!filteredDeliverables().length">No hay entregables para mostrar.</p>
       </div>
     </mat-card>
 
-    <div class="modal-shell" *ngIf="showModal()" (click)="closeModal()">
-      <mat-card class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-shell" *ngIf="showModal()" (click)="requestCloseModal()">
+      <mat-card class="surface-card modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
             <h2>Nuevo entregable</h2>
             <p>Asocia el entregable al contrato correcto desde una ventana más amplia.</p>
           </div>
-          <button mat-icon-button type="button" (click)="closeModal()" aria-label="Cerrar formulario">
+          <button mat-icon-button class="icon-button icon-button--ghost icon-button--danger" type="button" (click)="requestCloseModal()" aria-label="Cerrar formulario">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -90,14 +119,30 @@ import { ContractItem, Deliverable } from '../core/models';
             <input matInput formControlName="description" />
           </mat-form-field>
           <div class="form-actions">
-            <button mat-flat-button color="primary" type="submit">Guardar entregable</button>
-            <button mat-stroked-button type="button" (click)="closeModal()">Cancelar</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Guardando...' : 'Guardar entregable' }}
+            </button>
+            <button mat-stroked-button type="button" (click)="requestCloseModal()" [disabled]="saving()">Cancelar</button>
           </div>
         </form>
+
+        <section class="draft-warning" *ngIf="discardDraftPrompt()">
+          <div>
+            <p class="draft-warning__eyebrow">Cambios sin guardar</p>
+            <h3>¿Cerrar sin guardar?</h3>
+            <p>Perderas la informacion editada del entregable.</p>
+          </div>
+          <div class="draft-warning__actions">
+            <button mat-flat-button color="primary" type="button" (click)="confirmDiscardDraft()">Descartar cambios</button>
+            <button mat-stroked-button type="button" (click)="discardDraftPrompt.set(false)">Seguir editando</button>
+          </div>
+        </section>
       </mat-card>
     </div>
+    </section>
   `,
   styles: [`
+    :host { display: block; }
     .section-header, .modal-header {
       display: flex;
       align-items: flex-start;
@@ -106,31 +151,40 @@ import { ContractItem, Deliverable } from '../core/models';
       margin-bottom: 16px;
     }
     .section-header h2, .modal-header h2 { margin: 0; }
-    .section-help, .modal-header p { margin: 6px 0 0; color: #566573; }
+    .section-help, .modal-header p { margin: 6px 0 0; color: var(--color-ink-soft); }
     .filters {
       display: grid;
       grid-template-columns: minmax(260px, 420px);
       gap: 12px;
       margin-bottom: 20px;
     }
-    .table-wrap { overflow-x: auto; }
+    .empty-panel {
+      margin-bottom: 14px;
+    }
+    .draft-warning {
+      margin-top: 8px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--color-border);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.82);
+    }
     table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
+    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid rgba(23, 50, 77, 0.08); vertical-align: top; }
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-ink-muted);
+      background: rgba(245, 239, 230, 0.66);
+    }
     .cards { display: grid; gap: 12px; }
-    .item-card { padding: 16px; border: 1px solid #ddd; border-radius: 12px; background: #fff; }
+    .item-card { padding: 18px; border: 1px solid var(--color-border); border-radius: 22px; background: rgba(255, 255, 255, 0.88); box-shadow: var(--shadow-soft); }
     .item-card h3, .item-card p { margin: 0 0 8px; }
-    .empty { text-align: center; color: #666; }
+    .empty { text-align: center; color: var(--color-ink-soft); }
     .desktop-only { display: block; }
     .mobile-only { display: none; }
-    .modal-shell {
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background: rgba(15, 24, 35, 0.44);
-    }
     .modal-card {
       width: min(880px, calc(100vw - 32px));
       max-height: calc(100vh - 48px);
@@ -150,7 +204,7 @@ import { ContractItem, Deliverable } from '../core/models';
       padding-top: 4px;
     }
     @media (max-width: 960px) {
-      .section-header, .modal-header, .filters, form, .form-actions {
+      .section-header, .modal-header, .filters, form, .form-actions, .list-toolbar, .empty-panel, .draft-warning {
         display: grid;
         grid-template-columns: 1fr;
       }
@@ -165,11 +219,15 @@ import { ContractItem, Deliverable } from '../core/models';
 export class DeliverablesCatalogPageComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly feedback = inject(FeedbackService);
 
   readonly contracts = signal<ContractItem[]>([]);
   readonly deliverables = signal<Deliverable[]>([]);
   readonly searchTerm = signal('');
   readonly showModal = signal(false);
+  readonly discardDraftPrompt = signal(false);
+  readonly saving = signal(false);
+  readonly hasActiveFilters = computed(() => !!this.searchTerm().trim());
   readonly filteredDeliverables = computed(() => {
     const search = this.searchTerm().trim().toLowerCase();
     return this.deliverables().filter(item => !search || [
@@ -191,16 +249,41 @@ export class DeliverablesCatalogPageComponent {
 
   openModal() {
     this.form.reset({ contractId: '', name: '', description: '' });
+    this.form.markAsPristine();
+    this.discardDraftPrompt.set(false);
     this.showModal.set(true);
   }
 
   closeModal() {
     this.form.reset({ contractId: '', name: '', description: '' });
+    this.form.markAsPristine();
+    this.discardDraftPrompt.set(false);
     this.showModal.set(false);
   }
 
   updateSearchTerm(event: Event) {
     this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
+
+  clearFilters() {
+    this.searchTerm.set('');
+  }
+
+  requestCloseModal() {
+    if (this.saving()) {
+      return;
+    }
+
+    if (this.form.dirty) {
+      this.discardDraftPrompt.set(true);
+      return;
+    }
+
+    this.closeModal();
+  }
+
+  confirmDiscardDraft() {
+    this.closeModal();
   }
 
   saveDeliverable() {
@@ -209,9 +292,15 @@ export class DeliverablesCatalogPageComponent {
       return;
     }
 
-    this.api.createDeliverable(this.form.getRawValue()).subscribe(() => {
-      this.closeModal();
-      this.reload();
+    this.saving.set(true);
+    this.api.createDeliverable(this.form.getRawValue()).subscribe({
+      next: () => {
+        this.feedback.success('Entregable creado.');
+        this.closeModal();
+        this.reload();
+      },
+      error: () => this.feedback.error('No fue posible guardar el entregable.'),
+      complete: () => this.saving.set(false)
     });
   }
 
@@ -225,7 +314,13 @@ export class DeliverablesCatalogPageComponent {
   }
 
   private reload() {
-    this.api.getContracts().subscribe(data => this.contracts.set(data));
-    this.api.getDeliverables().subscribe(data => this.deliverables.set(data));
+    this.api.getContracts().subscribe({
+      next: data => this.contracts.set(data),
+      error: () => this.feedback.error('No fue posible cargar los contratos.')
+    });
+    this.api.getDeliverables().subscribe({
+      next: data => this.deliverables.set(data),
+      error: () => this.feedback.error('No fue posible cargar los entregables.')
+    });
   }
 }

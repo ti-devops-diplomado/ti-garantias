@@ -39,6 +39,26 @@ export class AuthService {
     return !!current && roles.some(role => current.roles.includes(role));
   }
 
+  getPreferredRoute(user = this.user()) {
+    if (!user) {
+      return '/login';
+    }
+
+    if (user.roles.includes('Admin')) {
+      return '/dashboard';
+    }
+
+    if (user.roles.includes('Gestor')) {
+      return '/pendientes-gestion';
+    }
+
+    if (user.roles.includes('Registrador')) {
+      return '/mis-registros';
+    }
+
+    return '/dashboard';
+  }
+
   get apiBaseUrl() {
     return (window as Window & { __env?: { apiBaseUrl?: string } }).__env?.apiBaseUrl ?? 'http://localhost:8080';
   }

@@ -72,7 +72,7 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
       <mat-card class="modal-card" (click)="$event.stopPropagation()">
         <div class="card-header modal-header">
           <h2>{{ editingSupplierId() ? 'Editar proveedor' : 'Nuevo proveedor' }}</h2>
-          <button mat-icon-button type="button" (click)="cancelSupplierEdit()" aria-label="Cerrar formulario">
+          <button mat-icon-button class="icon-button icon-button--ghost icon-button--danger" type="button" (click)="cancelSupplierEdit()" aria-label="Cerrar formulario">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -92,7 +92,7 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
       <mat-card class="modal-card" (click)="$event.stopPropagation()">
         <div class="card-header modal-header">
           <h2>{{ editingContractId() ? 'Editar contrato' : 'Nuevo contrato' }}</h2>
-          <button mat-icon-button type="button" (click)="cancelContractEdit()" aria-label="Cerrar formulario">
+          <button mat-icon-button class="icon-button icon-button--ghost icon-button--danger" type="button" (click)="cancelContractEdit()" aria-label="Cerrar formulario">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -142,7 +142,7 @@ import { ContractItem, Deliverable, Supplier } from '../core/models';
       <mat-card class="modal-card" (click)="$event.stopPropagation()">
         <div class="card-header modal-header">
           <h2>Nuevo entregable</h2>
-          <button mat-icon-button type="button" (click)="cancelDeliverableEdit()" aria-label="Cerrar formulario">
+          <button mat-icon-button class="icon-button icon-button--ghost icon-button--danger" type="button" (click)="cancelDeliverableEdit()" aria-label="Cerrar formulario">
             <mat-icon>close</mat-icon>
           </button>
         </div>
