@@ -1,36 +1,62 @@
 import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './core/auth.guards';
-import { LoginPageComponent } from './pages/login-page.component';
-import { ShellComponent } from './pages/shell.component';
-import { InvoicesPageComponent } from './pages/invoices-page.component';
-import { UsersPageComponent } from './pages/users-page.component';
-import { DashboardPageComponent } from './pages/dashboard-page.component';
-import { SuppliersCatalogPageComponent } from './pages/suppliers-catalog-page.component';
-import { ContractsCatalogPageComponent } from './pages/contracts-catalog-page.component';
-import { DeliverablesCatalogPageComponent } from './pages/deliverables-catalog-page.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginPageComponent },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/login-page.component').then(m => m.LoginPageComponent)
+  },
   {
     path: '',
-    component: ShellComponent,
+    loadComponent: () => import('./pages/shell.component').then(m => m.ShellComponent),
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', component: DashboardPageComponent },
-      { path: 'mis-registros', component: InvoicesPageComponent, canActivate: [roleGuard(['Registrador', 'Admin'])], data: { scope: 'mine' } },
-      { path: 'pendientes-gestion', component: InvoicesPageComponent, canActivate: [roleGuard(['Gestor', 'Admin'])], data: { scope: 'managed' } },
-      { path: 'facturas', component: InvoicesPageComponent, canActivate: [roleGuard(['Registrador', 'Admin'])], data: { scope: 'all' } },
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./pages/dashboard-page.component').then(m => m.DashboardPageComponent)
+      },
+      {
+        path: 'mis-registros',
+        loadComponent: () => import('./pages/invoices-page.component').then(m => m.InvoicesPageComponent),
+        canActivate: [roleGuard(['Registrador', 'Admin'])],
+        data: { scope: 'mine' }
+      },
+      {
+        path: 'pendientes-gestion',
+        loadComponent: () => import('./pages/invoices-page.component').then(m => m.InvoicesPageComponent),
+        canActivate: [roleGuard(['Gestor', 'Admin'])],
+        data: { scope: 'managed' }
+      },
+      {
+        path: 'facturas',
+        loadComponent: () => import('./pages/invoices-page.component').then(m => m.InvoicesPageComponent),
+        canActivate: [roleGuard(['Registrador', 'Admin'])],
+        data: { scope: 'all' }
+      },
       {
         path: 'catalogos',
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'proveedores' },
-          { path: 'proveedores', component: SuppliersCatalogPageComponent },
-          { path: 'contratos', component: ContractsCatalogPageComponent },
-          { path: 'entregables', component: DeliverablesCatalogPageComponent }
+          {
+            path: 'proveedores',
+            loadComponent: () => import('./pages/suppliers-catalog-page.component').then(m => m.SuppliersCatalogPageComponent)
+          },
+          {
+            path: 'contratos',
+            loadComponent: () => import('./pages/contracts-catalog-page.component').then(m => m.ContractsCatalogPageComponent)
+          },
+          {
+            path: 'entregables',
+            loadComponent: () => import('./pages/deliverables-catalog-page.component').then(m => m.DeliverablesCatalogPageComponent)
+          }
         ]
       },
-      { path: 'admin/usuarios', component: UsersPageComponent, canActivate: [roleGuard(['Admin'])] }
+      {
+        path: 'admin/usuarios',
+        loadComponent: () => import('./pages/users-page.component').then(m => m.UsersPageComponent),
+        canActivate: [roleGuard(['Admin'])]
+      }
     ]
   },
   { path: '**', redirectTo: '' }

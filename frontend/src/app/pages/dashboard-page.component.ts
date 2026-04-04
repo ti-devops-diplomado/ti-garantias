@@ -24,6 +24,16 @@ interface QuickAction {
   hint: string;
 }
 
+interface FocusCard {
+  eyebrow: string;
+  title: string;
+  detail: string;
+  route: string;
+  cta: string;
+  tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success';
+  value: number;
+}
+
 interface ManagerLoadRow {
   managerName: string;
   assigned: number;
@@ -36,394 +46,408 @@ interface ManagerLoadRow {
   standalone: true,
   imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
   template: `
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Panel principal</p>
-        <h1>{{ title() }}</h1>
-        <p class="subtitle">{{ subtitle() }}</p>
+    <section class="page-shell">
+      <section class="page-hero">
+        <div>
+          <p class="page-hero__eyebrow">Panel principal</p>
+          <h1 class="page-hero__title">{{ title() }}</h1>
+          <p class="page-hero__subtitle">{{ subtitle() }}</p>
+        </div>
+        <div class="hero-stat-grid" *ngIf="summaryCards().length">
+          <article class="hero-stat" *ngFor="let card of summaryCards().slice(0, 3)">
+            <p class="hero-stat__label">{{ card.label }}</p>
+            <p class="hero-stat__value">{{ card.value }}</p>
+          </article>
+        </div>
+      </section>
+
+      <div class="loading-state" *ngIf="loading()">
+        <mat-spinner diameter="42"></mat-spinner>
+        <p>Cargando informacion del panel...</p>
       </div>
-      <div class="quick-actions" *ngIf="quickActions().length">
-        <a mat-flat-button *ngFor="let action of quickActions()" [routerLink]="action.route">
-          {{ action.label }}
-        </a>
-      </div>
-    </section>
 
-    <div class="loading-state" *ngIf="loading()">
-      <mat-spinner diameter="42"></mat-spinner>
-      <p>Cargando información del panel...</p>
-    </div>
-
-    <mat-card class="error-card" *ngIf="error() && !loading()">
-      <h2>No pudimos cargar el dashboard</h2>
-      <p>{{ error() }}</p>
-      <button mat-flat-button (click)="loadDashboard()">Intentar de nuevo</button>
-    </mat-card>
-
-    <ng-container *ngIf="!loading() && !error()">
-      <section class="summary-grid" *ngIf="summaryCards().length">
-        <mat-card class="summary-card" *ngFor="let card of summaryCards()" [ngClass]="card.tone">
-          <p>{{ card.label }}</p>
-          <strong>{{ card.value }}</strong>
-        </mat-card>
-      </section>
-
-      <section class="content-grid" *ngIf="role() === 'registrar'">
-        <mat-card>
-          <div class="section-head">
-            <div>
-              <h2>Alertas de vencimiento</h2>
-              <p>Facturas propias que requieren atención por fecha.</p>
-            </div>
-            <a mat-stroked-button routerLink="/mis-registros">Ver mis registros</a>
+      <mat-card class="surface-card surface-card--soft error-card" *ngIf="error() && !loading()">
+        <div class="surface-card__header">
+          <div>
+            <p class="surface-card__eyebrow">Dashboard</p>
+            <h2>No pudimos cargar el panel</h2>
+            <p class="surface-card__copy">{{ error() }}</p>
           </div>
-          <table class="table" *ngIf="registrarAlerts().length; else noRegistrarAlerts">
-            <thead>
-              <tr>
-                <th>Factura</th>
-                <th>Contrato</th>
-                <th>Proveedor</th>
-                <th>Vencimiento</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of registrarAlerts()">
-                <td data-label="Factura">{{ item.invoiceNumber }}</td>
-                <td data-label="Contrato">{{ contractLabel(item) }}</td>
-                <td data-label="Proveedor">{{ item.supplierName }}</td>
-                <td data-label="Vencimiento">{{ item.estimatedRefundDate || 'Pendiente' }}</td>
-                <td data-label="Estado">{{ item.status }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <ng-template #noRegistrarAlerts>
-            <p class="empty">No tienes facturas por vencer o vencidas en este momento.</p>
-          </ng-template>
-        </mat-card>
-
-        <mat-card>
-          <div class="section-head">
-            <div>
-              <h2>Completar información</h2>
-              <p>Facturas propias con datos o soportes pendientes.</p>
-            </div>
-            <a mat-stroked-button routerLink="/mis-registros">Completar datos</a>
-          </div>
-          <table class="table" *ngIf="registrarMissingInfo().length; else noRegistrarMissingInfo">
-            <thead>
-              <tr>
-                <th>Factura</th>
-                <th>Contrato</th>
-                <th>Faltantes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of registrarMissingInfo()">
-                <td data-label="Factura">{{ item.invoiceNumber }}</td>
-                <td data-label="Contrato">{{ contractLabel(item) }}</td>
-                <td data-label="Faltantes">{{ missingInfoLabel(item) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <ng-template #noRegistrarMissingInfo>
-            <p class="empty">Tus facturas no tienen faltantes críticos de información.</p>
-          </ng-template>
-        </mat-card>
-      </section>
-
-      <section class="content-grid" *ngIf="role() === 'manager'">
-        <mat-card>
-          <div class="section-head">
-            <div>
-              <h2>Pendientes por gestionar</h2>
-              <p>Facturas asignadas al gestor actual y aún no gestionadas.</p>
-            </div>
-            <a mat-stroked-button routerLink="/pendientes-gestion">Abrir pendientes</a>
-          </div>
-          <table class="table" *ngIf="managerPending().length; else noManagerPending">
-            <thead>
-              <tr>
-                <th>Factura</th>
-                <th>Contrato</th>
-                <th>Proveedor</th>
-                <th>Estado</th>
-                <th>Vencimiento</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of managerPending()">
-                <td data-label="Factura">{{ item.invoiceNumber }}</td>
-                <td data-label="Contrato">{{ contractLabel(item) }}</td>
-                <td data-label="Proveedor">{{ item.supplierName }}</td>
-                <td data-label="Estado">{{ item.status }}</td>
-                <td data-label="Vencimiento">{{ item.estimatedRefundDate || 'Pendiente' }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <ng-template #noManagerPending>
-            <p class="empty">No hay facturas asignadas pendientes por gestionar.</p>
-          </ng-template>
-        </mat-card>
-
-        <mat-card>
-          <div class="section-head">
-            <div>
-              <h2>Faltantes de información</h2>
-              <p>Facturas asignadas con OC, fechas o soportes pendientes.</p>
-            </div>
-            <a mat-stroked-button routerLink="/pendientes-gestion">Completar información</a>
-          </div>
-          <table class="table" *ngIf="managerMissingInfo().length; else noManagerMissingInfo">
-            <thead>
-              <tr>
-                <th>Factura</th>
-                <th>Contrato</th>
-                <th>Faltantes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of managerMissingInfo()">
-                <td data-label="Factura">{{ item.invoiceNumber }}</td>
-                <td data-label="Contrato">{{ contractLabel(item) }}</td>
-                <td data-label="Faltantes">{{ missingInfoLabel(item) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <ng-template #noManagerMissingInfo>
-            <p class="empty">Las facturas asignadas tienen la información clave completa.</p>
-          </ng-template>
-        </mat-card>
-      </section>
-
-      <section class="content-grid admin-grid" *ngIf="role() === 'admin'">
-        <mat-card>
-          <div class="section-head">
-            <div>
-              <h2>Visión global</h2>
-              <p>Estado general del ciclo de facturas en la plataforma.</p>
-            </div>
-            <a mat-stroked-button routerLink="/facturas">Ver facturas</a>
-          </div>
-          <table class="table" *ngIf="adminAlerts().length; else noAdminAlerts">
-            <thead>
-              <tr>
-                <th>Factura</th>
-                <th>Contrato</th>
-                <th>Proveedor</th>
-                <th>Gestor</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of adminAlerts()">
-                <td data-label="Factura">{{ item.invoiceNumber }}</td>
-                <td data-label="Contrato">{{ contractLabel(item) }}</td>
-                <td data-label="Proveedor">{{ item.supplierName }}</td>
-                <td data-label="Gestor">{{ item.refundManagerName || 'Sin asignar' }}</td>
-                <td data-label="Estado">{{ item.status }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <ng-template #noAdminAlerts>
-            <p class="empty">No hay alertas globales críticas en este momento.</p>
-          </ng-template>
-        </mat-card>
-
-        <mat-card>
-          <div class="section-head">
-            <div>
-              <h2>Carga por gestor</h2>
-              <p>Distribución actual de facturas asignadas por responsable.</p>
-            </div>
-            <a mat-stroked-button routerLink="/admin/usuarios">Administrar usuarios</a>
-          </div>
-          <table class="table" *ngIf="managerLoad().length; else noManagerLoad">
-            <thead>
-              <tr>
-                <th>Gestor</th>
-                <th>Asignadas</th>
-                <th>Pendientes</th>
-                <th>Gestionadas</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of managerLoad()">
-                <td data-label="Gestor">{{ row.managerName }}</td>
-                <td data-label="Asignadas">{{ row.assigned }}</td>
-                <td data-label="Pendientes">{{ row.pending }}</td>
-                <td data-label="Gestionadas">{{ row.managed }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <ng-template #noManagerLoad>
-            <p class="empty">Todavía no hay gestores o asignaciones para mostrar.</p>
-          </ng-template>
-        </mat-card>
-      </section>
-
-      <mat-card *ngIf="role() === 'generic'">
-        <h2>Bienvenido</h2>
-        <p>No encontramos un dashboard específico para tu rol actual. Usa el menú lateral para continuar.</p>
+          <button mat-flat-button color="primary" (click)="loadDashboard()">Intentar de nuevo</button>
+        </div>
       </mat-card>
-    </ng-container>
+
+      <ng-container *ngIf="!loading() && !error()">
+        <section class="summary-grid" *ngIf="summaryCards().length">
+          <mat-card class="surface-card summary-card" *ngFor="let card of summaryCards()" [ngClass]="'summary-card--' + card.tone">
+            <p>{{ card.label }}</p>
+            <strong>{{ card.value }}</strong>
+          </mat-card>
+        </section>
+
+        <section class="focus-grid" *ngIf="focusCards().length">
+          <mat-card class="surface-card focus-card" *ngFor="let item of focusCards()" [ngClass]="'focus-card--' + item.tone">
+            <p class="focus-card__eyebrow">{{ item.eyebrow }}</p>
+            <strong class="focus-card__value">{{ item.value }}</strong>
+            <h3>{{ item.title }}</h3>
+            <p class="focus-card__detail">{{ item.detail }}</p>
+            <a mat-stroked-button [routerLink]="item.route">{{ item.cta }}</a>
+          </mat-card>
+        </section>
+
+        <section class="action-strip" *ngIf="quickActions().length">
+          <a class="action-tile" *ngFor="let action of quickActions()" [routerLink]="action.route">
+            <span class="action-tile__label">{{ action.label }}</span>
+            <span class="action-tile__hint">{{ action.hint }}</span>
+          </a>
+        </section>
+
+        <section class="content-grid" *ngIf="role() === 'registrar'">
+          <mat-card class="surface-card">
+            <div class="surface-card__header">
+              <div>
+                <p class="surface-card__eyebrow">Prioridad</p>
+                <h2>Alertas de vencimiento</h2>
+                <p class="surface-card__copy">Facturas propias que requieren atencion por fecha.</p>
+              </div>
+              <a mat-stroked-button routerLink="/mis-registros">Ver mis registros</a>
+            </div>
+            <div class="app-table-wrap" *ngIf="registrarAlerts().length; else noRegistrarAlerts">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Factura</th>
+                    <th>Contrato</th>
+                    <th>Proveedor</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of registrarAlerts()">
+                    <td data-label="Factura">{{ item.invoiceNumber }}</td>
+                    <td data-label="Contrato">{{ contractLabel(item) }}</td>
+                    <td data-label="Proveedor">{{ item.supplierName }}</td>
+                    <td data-label="Vencimiento">{{ item.estimatedRefundDate || 'Pendiente' }}</td>
+                    <td data-label="Estado">
+                      <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ng-template #noRegistrarAlerts>
+              <p class="empty-state">No tienes facturas por vencer o vencidas en este momento.</p>
+            </ng-template>
+          </mat-card>
+
+          <mat-card class="surface-card surface-card--accent">
+            <div class="surface-card__header">
+              <div>
+                <p class="surface-card__eyebrow">Completitud</p>
+                <h2>Completar informacion</h2>
+                <p class="surface-card__copy">Facturas propias con datos o soportes pendientes.</p>
+              </div>
+              <a mat-stroked-button routerLink="/mis-registros">Completar datos</a>
+            </div>
+            <div class="app-table-wrap" *ngIf="registrarMissingInfo().length; else noRegistrarMissingInfo">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Factura</th>
+                    <th>Contrato</th>
+                    <th>Faltantes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of registrarMissingInfo()">
+                    <td data-label="Factura">{{ item.invoiceNumber }}</td>
+                    <td data-label="Contrato">{{ contractLabel(item) }}</td>
+                    <td data-label="Faltantes">
+                      <span class="info-badge">{{ missingInfoLabel(item) }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ng-template #noRegistrarMissingInfo>
+              <p class="empty-state">Tus facturas no tienen faltantes criticos de informacion.</p>
+            </ng-template>
+          </mat-card>
+        </section>
+
+        <section class="content-grid" *ngIf="role() === 'manager'">
+          <mat-card class="surface-card">
+            <div class="surface-card__header">
+              <div>
+                <p class="surface-card__eyebrow">Gestion</p>
+                <h2>Pendientes por gestionar</h2>
+                <p class="surface-card__copy">Facturas asignadas al gestor actual y aun no gestionadas.</p>
+              </div>
+              <a mat-stroked-button routerLink="/pendientes-gestion">Abrir pendientes</a>
+            </div>
+            <div class="app-table-wrap" *ngIf="managerPending().length; else noManagerPending">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Factura</th>
+                    <th>Contrato</th>
+                    <th>Proveedor</th>
+                    <th>Estado</th>
+                    <th>Vencimiento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of managerPending()">
+                    <td data-label="Factura">{{ item.invoiceNumber }}</td>
+                    <td data-label="Contrato">{{ contractLabel(item) }}</td>
+                    <td data-label="Proveedor">{{ item.supplierName }}</td>
+                    <td data-label="Estado">
+                      <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                    </td>
+                    <td data-label="Vencimiento">{{ item.estimatedRefundDate || 'Pendiente' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ng-template #noManagerPending>
+              <p class="empty-state">No hay facturas asignadas pendientes por gestionar.</p>
+            </ng-template>
+          </mat-card>
+
+          <mat-card class="surface-card surface-card--accent">
+            <div class="surface-card__header">
+              <div>
+                <p class="surface-card__eyebrow">Detalle</p>
+                <h2>Faltantes de informacion</h2>
+                <p class="surface-card__copy">Facturas asignadas con OC, fechas o soportes pendientes.</p>
+              </div>
+              <a mat-stroked-button routerLink="/pendientes-gestion">Completar informacion</a>
+            </div>
+            <div class="app-table-wrap" *ngIf="managerMissingInfo().length; else noManagerMissingInfo">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Factura</th>
+                    <th>Contrato</th>
+                    <th>Faltantes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of managerMissingInfo()">
+                    <td data-label="Factura">{{ item.invoiceNumber }}</td>
+                    <td data-label="Contrato">{{ contractLabel(item) }}</td>
+                    <td data-label="Faltantes">
+                      <span class="info-badge">{{ missingInfoLabel(item) }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ng-template #noManagerMissingInfo>
+              <p class="empty-state">Las facturas asignadas tienen la informacion clave completa.</p>
+            </ng-template>
+          </mat-card>
+        </section>
+
+        <section class="content-grid" *ngIf="role() === 'admin'">
+          <mat-card class="surface-card">
+            <div class="surface-card__header">
+              <div>
+                <p class="surface-card__eyebrow">Visibilidad</p>
+                <h2>Vision global</h2>
+                <p class="surface-card__copy">Estado general del ciclo de facturas en la plataforma.</p>
+              </div>
+              <a mat-stroked-button routerLink="/facturas">Ver facturas</a>
+            </div>
+            <div class="app-table-wrap" *ngIf="adminAlerts().length; else noAdminAlerts">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Factura</th>
+                    <th>Contrato</th>
+                    <th>Proveedor</th>
+                    <th>Gestor</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of adminAlerts()">
+                    <td data-label="Factura">{{ item.invoiceNumber }}</td>
+                    <td data-label="Contrato">{{ contractLabel(item) }}</td>
+                    <td data-label="Proveedor">{{ item.supplierName }}</td>
+                    <td data-label="Gestor">{{ item.refundManagerName || 'Sin asignar' }}</td>
+                    <td data-label="Estado">
+                      <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ng-template #noAdminAlerts>
+              <p class="empty-state">No hay alertas globales criticas en este momento.</p>
+            </ng-template>
+          </mat-card>
+
+          <mat-card class="surface-card surface-card--accent">
+            <div class="surface-card__header">
+              <div>
+                <p class="surface-card__eyebrow">Capacidad</p>
+                <h2>Carga por gestor</h2>
+                <p class="surface-card__copy">Distribucion actual de facturas asignadas por responsable.</p>
+              </div>
+              <a mat-stroked-button routerLink="/admin/usuarios">Administrar usuarios</a>
+            </div>
+            <div class="app-table-wrap" *ngIf="managerLoad().length; else noManagerLoad">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Gestor</th>
+                    <th>Asignadas</th>
+                    <th>Pendientes</th>
+                    <th>Gestionadas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of managerLoad()">
+                    <td data-label="Gestor">{{ row.managerName }}</td>
+                    <td data-label="Asignadas">{{ row.assigned }}</td>
+                    <td data-label="Pendientes">{{ row.pending }}</td>
+                    <td data-label="Gestionadas">{{ row.managed }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ng-template #noManagerLoad>
+              <p class="empty-state">Todavia no hay gestores o asignaciones para mostrar.</p>
+            </ng-template>
+          </mat-card>
+        </section>
+
+        <mat-card class="surface-card" *ngIf="role() === 'generic'">
+          <div class="surface-card__header">
+            <div>
+              <p class="surface-card__eyebrow">Acceso</p>
+              <h2>Bienvenido</h2>
+              <p class="surface-card__copy">No encontramos un dashboard especifico para tu rol actual. Usa el menu lateral para continuar.</p>
+            </div>
+          </div>
+        </mat-card>
+      </ng-container>
+    </section>
   `,
   styles: [`
-    :host { display: block; }
-    .hero {
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      align-items: flex-start;
-      margin-bottom: 24px;
+    :host {
+      display: block;
     }
-    .eyebrow {
-      margin: 0 0 8px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      font-size: 12px;
-      color: #7c5e2a;
-      font-weight: 700;
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 32px;
-      line-height: 1.1;
-      color: #17324d;
-    }
-    .subtitle {
-      margin: 0;
-      max-width: 720px;
-      color: #4e5f73;
-    }
-    .quick-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: flex-end;
-    }
+
     .loading-state {
       display: grid;
       place-items: center;
       gap: 16px;
       min-height: 240px;
-      color: #4e5f73;
+      color: var(--color-ink-soft);
     }
-    .error-card { margin-bottom: 24px; }
-    .summary-grid {
+
+    .action-strip {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+
+    .focus-grid {
       display: grid;
       gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
-    .summary-card {
-      border-radius: 18px;
-      box-shadow: none;
-      border: 1px solid #e5dfd3;
+
+    .focus-card {
+      display: grid;
+      gap: 10px;
     }
-    .summary-card p {
-      margin: 0 0 12px;
-      color: #4e5f73;
-      font-size: 14px;
+
+    .focus-card__eyebrow,
+    .focus-card__value,
+    .focus-card h3,
+    .focus-card__detail {
+      margin: 0;
     }
-    .summary-card strong {
-      font-size: 34px;
+
+    .focus-card__eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+      color: var(--color-ink-muted);
+    }
+
+    .focus-card__value {
+      font-size: 2.4rem;
       line-height: 1;
-      color: #17324d;
+      color: var(--color-accent-strong);
     }
-    .summary-card.info { background: #eff5ff; }
-    .summary-card.warning { background: #fff7e8; }
-    .summary-card.danger { background: #fff0ed; }
-    .summary-card.success { background: #eef8ef; }
-    .summary-card.neutral { background: #ffffff; }
+
+    .focus-card__detail {
+      color: var(--color-ink-soft);
+    }
+
+    .focus-card--warning {
+      background: linear-gradient(180deg, #fff8e8, #fff1d4);
+    }
+
+    .focus-card--danger {
+      background: linear-gradient(180deg, #fff3ef, #fdece7);
+    }
+
+    .focus-card--info {
+      background: linear-gradient(180deg, #eff7fd, #dceffd);
+    }
+
+    .focus-card--success {
+      background: linear-gradient(180deg, #eef8f3, #e6f4ee);
+    }
+
+    .action-tile {
+      display: block;
+      padding: 18px 20px;
+      border: 1px solid rgba(23, 50, 77, 0.08);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      text-decoration: none;
+      box-shadow: var(--shadow-soft);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+
+    .action-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 36px rgba(15, 31, 48, 0.1);
+    }
+
+    .action-tile__label,
+    .action-tile__hint {
+      display: block;
+      margin: 0;
+    }
+
+    .action-tile__label {
+      font-weight: 800;
+      color: var(--color-accent-strong);
+    }
+
+    .action-tile__hint {
+      margin-top: 6px;
+      color: var(--color-ink-soft);
+    }
+
     .content-grid {
       display: grid;
       gap: 20px;
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .admin-grid { margin-bottom: 24px; }
-    .section-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .section-head h2 {
-      margin: 0 0 6px;
-      font-size: 22px;
-      color: #17324d;
-    }
-    .section-head p {
-      margin: 0;
-      color: #4e5f73;
-    }
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .table th,
-    .table td {
-      text-align: left;
-      padding: 12px 8px;
-      border-bottom: 1px solid #ece7dc;
-      vertical-align: top;
-    }
-    .table th {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      color: #6b7b8c;
-    }
-    .table td {
-      color: #22384f;
-    }
-    .empty {
-      margin: 0;
-      padding: 12px 0 4px;
-      color: #5f6f81;
-    }
+
     @media (max-width: 960px) {
-      .hero,
-      .section-head {
-        flex-direction: column;
-      }
       .content-grid {
         grid-template-columns: 1fr;
-      }
-      .table,
-      .table thead,
-      .table tbody,
-      .table tr,
-      .table th,
-      .table td {
-        display: block;
-      }
-      .table thead {
-        display: none;
-      }
-      .table tr {
-        padding: 12px;
-        border: 1px solid #ece7dc;
-        border-radius: 14px;
-        background: #fff;
-        margin-bottom: 12px;
-      }
-      .table td {
-        border-bottom: none;
-        padding: 6px 0;
-      }
-      .table td::before {
-        content: attr(data-label);
-        display: block;
-        margin-bottom: 2px;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        color: #7b8795;
-      }
-      .quick-actions {
-        justify-content: flex-start;
       }
     }
   `]
@@ -529,6 +553,105 @@ export class DashboardPageComponent {
           { label: 'Pendientes', route: '/pendientes-gestion', hint: 'Revisar gestión' },
           { label: 'Usuarios', route: '/admin/usuarios', hint: 'Administrar accesos' },
           { label: 'Catálogos', route: '/catalogos/proveedores', hint: 'Mantener maestros' }
+        ];
+      default:
+        return [];
+    }
+  });
+
+  readonly focusCards = computed<FocusCard[]>(() => {
+    const invoices = this.invoices();
+
+    switch (this.role()) {
+      case 'registrar':
+        return [
+          {
+            eyebrow: 'Atiende hoy',
+            title: 'Facturas por vencer',
+            detail: 'Prioriza las facturas con fecha mas cercana para evitar atrasos.',
+            route: '/mis-registros',
+            cta: 'Abrir registros',
+            tone: 'warning',
+            value: invoices.filter(item => item.status === 'Por_Vencer').length
+          },
+          {
+            eyebrow: 'Completa datos',
+            title: 'Registros con faltantes',
+            detail: 'Actualiza OC, fecha de vencimiento o soportes en los casos incompletos.',
+            route: '/mis-registros',
+            cta: 'Completar informacion',
+            tone: 'info',
+            value: invoices.filter(item => this.hasMissingInfo(item)).length
+          },
+          {
+            eyebrow: 'Seguimiento',
+            title: 'Facturas vencidas',
+            detail: 'Revisa primero las facturas ya vencidas para destrabar su gestion.',
+            route: '/mis-registros',
+            cta: 'Revisar vencidas',
+            tone: 'danger',
+            value: invoices.filter(item => item.status === 'Vencida').length
+          }
+        ];
+      case 'manager':
+        return [
+          {
+            eyebrow: 'Cola de trabajo',
+            title: 'Pendientes de gestion',
+            detail: 'Facturas asignadas que aun requieren revision o cierre.',
+            route: '/pendientes-gestion',
+            cta: 'Abrir pendientes',
+            tone: 'warning',
+            value: this.pendingManagedInvoices(invoices).length
+          },
+          {
+            eyebrow: 'Bloqueos',
+            title: 'Sin soportes',
+            detail: 'Casos que no podran cerrarse hasta recibir adjuntos.',
+            route: '/pendientes-gestion',
+            cta: 'Completar soportes',
+            tone: 'danger',
+            value: invoices.filter(item => !item.attachments.length).length
+          },
+          {
+            eyebrow: 'Completitud',
+            title: 'Sin fecha estimada',
+            detail: 'Ajusta la fecha de vencimiento para mejorar el seguimiento.',
+            route: '/pendientes-gestion',
+            cta: 'Actualizar fechas',
+            tone: 'info',
+            value: invoices.filter(item => !this.hasValue(item.estimatedRefundDate)).length
+          }
+        ];
+      case 'admin':
+        return [
+          {
+            eyebrow: 'Riesgo',
+            title: 'Facturas vencidas',
+            detail: 'Casos vencidos que requieren visibilidad y destrabe inmediato.',
+            route: '/facturas',
+            cta: 'Ver facturas',
+            tone: 'danger',
+            value: invoices.filter(item => item.status === 'Vencida').length
+          },
+          {
+            eyebrow: 'Cobertura',
+            title: 'Sin gestor asignado',
+            detail: 'Facturas sin responsable claro para avanzar el proceso.',
+            route: '/facturas',
+            cta: 'Asignar responsables',
+            tone: 'warning',
+            value: invoices.filter(item => !this.hasValue(item.refundManagerName)).length
+          },
+          {
+            eyebrow: 'Capacidad',
+            title: 'Gestores con alta carga',
+            detail: 'Responsables con cinco o mas pendientes que podrian requerir apoyo.',
+            route: '/admin/usuarios',
+            cta: 'Revisar carga',
+            tone: 'info',
+            value: this.managerLoad().filter(item => item.pending >= 5).length
+          }
         ];
       default:
         return [];
@@ -654,6 +777,22 @@ export class DashboardPageComponent {
       missing.push('adjuntos');
     }
     return missing.join(', ');
+  }
+
+  statusClass(status: string) {
+    switch (status) {
+      case 'Por_Vencer':
+        return 'status-badge--warning';
+      case 'Vencida':
+        return 'status-badge--danger';
+      case 'Gestionada':
+        return 'status-badge--success';
+      case 'Registrada':
+      case 'En_Gestion':
+        return 'status-badge--info';
+      default:
+        return 'status-badge--neutral';
+    }
   }
 
   private pendingManagedInvoices(invoices: InvoiceItem[]) {
