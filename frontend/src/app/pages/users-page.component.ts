@@ -299,6 +299,23 @@ interface PendingUserAction {
         max-height: min(90vh, 100%);
       }
     }
+    @media (max-width: 480px) {
+      .confirm-panel,
+      .user-card {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      .confirm-panel__actions,
+      .actions,
+      .modal-header {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .confirm-panel__actions button,
+      .actions button {
+        width: 100%;
+      }
+    }
   `]
 })
 export class UsersPageComponent {

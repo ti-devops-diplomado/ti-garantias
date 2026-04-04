@@ -35,13 +35,6 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
         </div>
       </section>
 
-      <section class="summary-grid" *ngIf="headlineStats().length">
-        <mat-card class="surface-card summary-card" *ngFor="let stat of headlineStats()" [ngClass]="'summary-card--' + stat.tone">
-          <p>{{ stat.label }}</p>
-          <strong>{{ stat.value }}</strong>
-        </mat-card>
-      </section>
-
       <ng-container *ngIf="scope !== 'mine'; else mineLayout">
       <mat-card class="surface-card">
         <div class="section-header">
@@ -637,6 +630,28 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
       .modal-card {
         width: 100%;
         max-height: min(90vh, 100%);
+      }
+    }
+    @media (max-width: 480px) {
+      .invoice {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      .invoice-header {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .detail-grid,
+      .mobile-detail-panel {
+        gap: 8px;
+      }
+      .section-header button,
+      .form-actions button {
+        width: 100%;
+      }
+      .modal-header {
+        display: grid;
+        grid-template-columns: 1fr;
       }
     }
   `]

@@ -97,7 +97,7 @@ interface MobileDockLink {
             <button mat-icon-button class="icon-button icon-button--surface" *ngIf="isMobile()" (click)="toggleMobileDrawer()" aria-label="Abrir menú">
               <mat-icon>menu</mat-icon>
             </button>
-            <div>
+            <div class="topbar__title-group">
               <p class="topbar__eyebrow">Gestión de garantías</p>
               <h2>{{ activeTitle() }}</h2>
             </div>
@@ -105,9 +105,9 @@ interface MobileDockLink {
           <div class="topbar__right">
             <span class="info-badge desktop-chip">{{ todayLabel }}</span>
             <span class="topbar__user" *ngIf="!isMobile()">{{ auth.user()?.fullName }}</span>
-            <button mat-stroked-button (click)="auth.logout()">
+            <button mat-stroked-button type="button" class="topbar__logout" aria-label="Cerrar sesión" (click)="auth.logout()">
               <mat-icon>logout</mat-icon>
-              Salir
+              <span class="topbar__logout-label">Salir</span>
             </button>
           </div>
         </mat-toolbar>
@@ -305,6 +305,15 @@ interface MobileDockLink {
       gap: 14px;
     }
 
+    .topbar__left {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .topbar__title-group {
+      min-width: 0;
+    }
+
     .topbar__left h2,
     .topbar__left p {
       margin: 0;
@@ -322,6 +331,9 @@ interface MobileDockLink {
     .topbar__left h2 {
       font-size: 1.35rem;
       line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .topbar__user {
@@ -329,9 +341,15 @@ interface MobileDockLink {
       font-weight: 700;
     }
 
+    .topbar__logout {
+      white-space: nowrap;
+      min-width: auto;
+    }
+
     .content-area {
       padding: 28px;
       min-height: calc(100vh - 76px);
+      overflow-x: clip;
     }
 
     .mobile-dock {
@@ -363,6 +381,7 @@ interface MobileDockLink {
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.02em;
+      min-width: 0;
     }
 
     .mobile-dock__link--button {
@@ -384,7 +403,8 @@ interface MobileDockLink {
 
     @media (max-width: 960px) {
       .topbar {
-        padding: 12px 14px;
+        gap: 10px;
+        padding: 10px 12px;
       }
 
       .topbar__left,
@@ -393,7 +413,21 @@ interface MobileDockLink {
       }
 
       .topbar__left h2 {
-        font-size: 1.1rem;
+        font-size: 1rem;
+      }
+
+      .topbar__eyebrow {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .topbar__right {
+        gap: 8px;
+      }
+
+      .topbar__logout {
+        padding-inline: 12px;
       }
 
       .desktop-chip {
@@ -401,11 +435,38 @@ interface MobileDockLink {
       }
 
       .content-area {
-        padding: 18px 16px 108px;
+        padding: 16px 14px 104px;
       }
 
       .mobile-dock {
         display: grid;
+        left: 10px;
+        right: 10px;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        gap: 6px;
+        padding: 6px;
+        border-radius: 22px;
+      }
+
+      .mobile-dock__link {
+        min-height: 54px;
+        padding: 6px 4px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar__logout-label {
+        display: none;
+      }
+
+      .topbar__logout {
+        padding-inline: 0;
+        width: 42px;
+        min-width: 42px;
+      }
+
+      .mobile-dock__link {
+        font-size: 10px;
       }
     }
   `]
