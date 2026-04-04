@@ -54,7 +54,7 @@ interface ManagerLoadRow {
           <p class="page-hero__subtitle">{{ subtitle() }}</p>
         </div>
         <div class="hero-stat-grid" *ngIf="summaryCards().length">
-          <article class="hero-stat" *ngFor="let card of summaryCards().slice(0, 3)">
+          <article class="hero-stat" *ngFor="let card of summaryCards()">
             <p class="hero-stat__label">{{ card.label }}</p>
             <p class="hero-stat__value">{{ card.value }}</p>
           </article>
@@ -78,13 +78,6 @@ interface ManagerLoadRow {
       </mat-card>
 
       <ng-container *ngIf="!loading() && !error()">
-        <section class="summary-grid" *ngIf="summaryCards().length">
-          <mat-card class="surface-card summary-card" *ngFor="let card of summaryCards()" [ngClass]="'summary-card--' + card.tone">
-            <p>{{ card.label }}</p>
-            <strong>{{ card.value }}</strong>
-          </mat-card>
-        </section>
-
         <section class="focus-grid" *ngIf="focusCards().length">
           <mat-card class="surface-card focus-card" *ngFor="let item of focusCards()" [ngClass]="'focus-card--' + item.tone">
             <p class="focus-card__eyebrow">{{ item.eyebrow }}</p>
@@ -446,6 +439,20 @@ interface ManagerLoadRow {
     }
 
     @media (max-width: 960px) {
+      .action-strip,
+      .focus-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .action-tile,
+      .focus-card {
+        border-radius: 20px;
+      }
+
+      .focus-card__value {
+        font-size: 2rem;
+      }
+
       .content-grid {
         grid-template-columns: 1fr;
       }

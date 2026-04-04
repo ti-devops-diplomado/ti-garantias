@@ -259,6 +259,45 @@ import { FeedbackService } from '../core/feedback.service';
         width: 100%;
       }
     }
+
+    @media (max-width: 480px) {
+      .login-page {
+        padding: 14px;
+      }
+
+      .login-grid {
+        gap: 16px;
+      }
+
+      .login-story h1 {
+        max-width: 100%;
+        font-size: clamp(2rem, 11vw, 2.8rem);
+      }
+
+      .login-story__copy {
+        font-size: 0.96rem;
+      }
+
+      .login-highlights article {
+        grid-template-columns: 40px 1fr;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 18px;
+      }
+
+      .login-highlights mat-icon {
+        width: 40px;
+        height: 40px;
+      }
+
+      .login-card {
+        padding: 20px 18px;
+      }
+
+      .login-card__footer {
+        padding: 14px;
+      }
+    }
   `]
 })
 export class LoginPageComponent {
