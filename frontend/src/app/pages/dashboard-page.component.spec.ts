@@ -29,7 +29,7 @@ describe('DashboardPageComponent', () => {
       refundManagedDate: null,
       refundManagerUserId: null,
       refundManagerName: null,
-      status: 'Registrada',
+      status: 'POR_VENCER',
       createdByUserName: 'Registrador Demo',
       deliverableIds: [],
       attachments: []
@@ -74,5 +74,11 @@ describe('DashboardPageComponent', () => {
       queryParams: { blocker: 'missing-manager', manager: 'unassigned' },
       value: 1
     }));
+  });
+
+  it('counts uppercased due soon invoices in the summary cards', () => {
+    const dueSoonCard = component.summaryCards().find(item => item.label === 'Por vencer');
+
+    expect(dueSoonCard?.value).toBe(1);
   });
 });
