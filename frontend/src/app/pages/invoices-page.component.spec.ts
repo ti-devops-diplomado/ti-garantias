@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { InvoicesPageComponent } from './invoices-page.component';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from '../core/models';
+import { ContractItem, Deliverable, InvoiceItem, InvoiceTimelineEvent, Supplier, UserSummary } from '../core/models';
 
 describe('InvoicesPageComponent', () => {
   let fixture: ComponentFixture<InvoicesPageComponent>;
@@ -116,16 +116,26 @@ describe('InvoicesPageComponent', () => {
     }
   ];
 
+  const timeline: InvoiceTimelineEvent[] = [
+    {
+      id: 't1',
+      action: 'create',
+      label: 'Factura registrada',
+      detail: 'Factura 001-001-123456789.',
+      actorName: 'Registrador Demo',
+      occurredAt: '2026-04-01T12:00:00Z'
+    }
+  ];
+
   const apiMock = {
     getUsers: jasmine.createSpy('getUsers').and.returnValue(of(users)),
     getSuppliers: jasmine.createSpy('getSuppliers').and.returnValue(of(suppliers)),
     getContracts: jasmine.createSpy('getContracts').and.returnValue(of(contracts)),
     getDeliverables: jasmine.createSpy('getDeliverables').and.returnValue(of(deliverables)),
     getInvoices: jasmine.createSpy('getInvoices').and.returnValue(of(invoices)),
+    getInvoiceTimeline: jasmine.createSpy('getInvoiceTimeline').and.returnValue(of(timeline)),
     saveInvoice: jasmine.createSpy('saveInvoice').and.returnValue(of(invoices[0])),
-    manageRefund: jasmine.createSpy('manageRefund').and.returnValue(of(invoices[0])),
-    uploadAttachment: jasmine.createSpy('uploadAttachment').and.returnValue(of({})),
-    getAttachmentPreview: jasmine.createSpy('getAttachmentPreview').and.returnValue(of({ blob: new Blob(), contentType: 'application/pdf' }))
+    manageRefund: jasmine.createSpy('manageRefund').and.returnValue(of(invoices[0]))
   };
 
   const authMock = {
@@ -178,6 +188,19 @@ describe('InvoicesPageComponent', () => {
     component.managerFilter.set('unassigned');
 
     expect(component.filteredInvoices().map(item => item.id)).toEqual(['i3']);
+  });
+
+  it('filters invoices by operational blocker', () => {
+    component.blockerFilter.set('missing-po');
+
+    expect(component.filteredInvoices().map(item => item.id)).toEqual(['i1']);
+  });
+
+  it('loads timeline when selecting an invoice', () => {
+    component.selectInvoice('i1');
+
+    expect(apiMock.getInvoiceTimeline).toHaveBeenCalledWith('i1');
+    expect(component.selectedTimeline()).toEqual(timeline);
   });
 
   it('saves the selected manager when updating an invoice', () => {

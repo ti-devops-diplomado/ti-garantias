@@ -140,9 +140,9 @@ interface ManagerLoadRow {
               <div>
                 <p class="surface-card__eyebrow">Completitud</p>
                 <h2>Completar informacion</h2>
-                <p class="surface-card__copy">Facturas propias con datos o soportes pendientes.</p>
+                <p class="surface-card__copy">Facturas propias con datos operativos pendientes.</p>
               </div>
-              <a mat-stroked-button routerLink="/mis-registros">Completar datos</a>
+              <a mat-stroked-button [routerLink]="'/mis-registros'" [queryParams]="{ blocker: 'missing-po' }">Completar datos</a>
             </div>
             <div class="app-table-wrap" *ngIf="registrarMissingInfo().length; else noRegistrarMissingInfo">
               <table class="data-table">
@@ -214,9 +214,9 @@ interface ManagerLoadRow {
               <div>
                 <p class="surface-card__eyebrow">Detalle</p>
                 <h2>Faltantes de informacion</h2>
-                <p class="surface-card__copy">Facturas asignadas con OC, fechas o soportes pendientes.</p>
+                <p class="surface-card__copy">Facturas asignadas con OC, fecha o responsable pendientes.</p>
               </div>
-              <a mat-stroked-button routerLink="/pendientes-gestion">Completar informacion</a>
+              <a mat-stroked-button [routerLink]="'/pendientes-gestion'" [queryParams]="{ blocker: 'missing-po' }">Completar informacion</a>
             </div>
             <div class="app-table-wrap" *ngIf="managerMissingInfo().length; else noManagerMissingInfo">
               <table class="data-table">
@@ -528,7 +528,7 @@ export class DashboardPageComponent {
           { label: 'Asignadas', value: invoices.length, tone: 'neutral' },
           { label: 'Pendientes', value: this.pendingManagedInvoices(invoices).length, tone: 'warning' },
           { label: 'Sin OC', value: invoices.filter(item => !this.hasValue(item.purchaseOrder)).length, tone: 'info' },
-          { label: 'Sin soportes', value: invoices.filter(item => !item.attachments.length).length, tone: 'danger' }
+          { label: 'Sin fecha', value: invoices.filter(item => item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)).length, tone: 'danger' }
         ];
       case 'admin':
         return [
@@ -585,8 +585,9 @@ export class DashboardPageComponent {
           {
             eyebrow: 'Completa datos',
             title: 'Registros con faltantes',
-            detail: 'Actualiza OC, fecha de vencimiento o soportes en los casos incompletos.',
+            detail: 'Actualiza OC, fecha de vencimiento o asignacion en los casos incompletos.',
             route: '/mis-registros',
+            queryParams: { blocker: 'missing-po' },
             cta: 'Completar informacion',
             tone: 'info',
             value: invoices.filter(item => this.hasMissingInfo(item)).length
@@ -614,21 +615,23 @@ export class DashboardPageComponent {
           },
           {
             eyebrow: 'Bloqueos',
-            title: 'Sin soportes',
-            detail: 'Casos que no podran cerrarse hasta recibir adjuntos.',
+            title: 'Sin OC',
+            detail: 'Casos que necesitan una orden de compra para completar su gestion.',
             route: '/pendientes-gestion',
-            cta: 'Completar soportes',
+            queryParams: { blocker: 'missing-po' },
+            cta: 'Completar informacion',
             tone: 'danger',
-            value: invoices.filter(item => !item.attachments.length).length
+            value: invoices.filter(item => !this.hasValue(item.purchaseOrder)).length
           },
           {
             eyebrow: 'Completitud',
             title: 'Sin fecha estimada',
             detail: 'Ajusta la fecha de vencimiento para mejorar el seguimiento.',
             route: '/pendientes-gestion',
+            queryParams: { blocker: 'missing-date' },
             cta: 'Actualizar fechas',
             tone: 'info',
-            value: invoices.filter(item => !this.hasValue(item.estimatedRefundDate)).length
+            value: invoices.filter(item => item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)).length
           }
         ];
       case 'admin':
@@ -647,7 +650,7 @@ export class DashboardPageComponent {
             title: 'Sin gestor asignado',
             detail: 'Facturas sin responsable claro para avanzar el proceso.',
             route: '/facturas',
-            queryParams: { manager: 'unassigned' },
+            queryParams: { blocker: 'missing-manager', manager: 'unassigned' },
             cta: 'Asignar responsables',
             tone: 'warning',
             value: invoices.filter(item => !this.hasValue(item.refundManagerName)).length
@@ -779,11 +782,11 @@ export class DashboardPageComponent {
     if (!this.hasValue(item.purchaseOrder)) {
       missing.push('OC');
     }
-    if (!this.hasValue(item.estimatedRefundDate)) {
+    if (item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)) {
       missing.push('fecha de vencimiento');
     }
-    if (!item.attachments.length) {
-      missing.push('adjuntos');
+    if (!item.refundManagerUserId) {
+      missing.push('gestor asignado');
     }
     return missing.join(', ');
   }
@@ -814,8 +817,8 @@ export class DashboardPageComponent {
 
   private hasMissingInfo(item: InvoiceItem) {
     return !this.hasValue(item.purchaseOrder)
-      || !this.hasValue(item.estimatedRefundDate)
-      || !item.attachments.length;
+      || (item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate))
+      || !item.refundManagerUserId;
   }
 
   private hasValue(value: string | null | undefined) {

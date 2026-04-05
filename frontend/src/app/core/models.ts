@@ -66,3 +66,12 @@ export interface InvoiceItem {
   deliverableIds: string[];
   attachments: AttachmentItem[];
 }
+
+export interface InvoiceTimelineEvent {
+  id: string;
+  action: string;
+  label: string;
+  detail: string;
+  actorName: string;
+  occurredAt: string;
+}
