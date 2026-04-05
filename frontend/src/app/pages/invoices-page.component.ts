@@ -72,7 +72,7 @@ interface InvoiceBlocker {
             <mat-label>Estado</mat-label>
             <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value || '')">
               <mat-option value="">Todos</mat-option>
-              <mat-option *ngFor="let item of availableStatuses()" [value]="item">{{ item }}</mat-option>
+              <mat-option *ngFor="let item of availableStatuses()" [value]="item">{{ statusLabel(item) }}</mat-option>
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline" *ngIf="canAssignManagers">
@@ -903,7 +903,7 @@ export class InvoicesPageComponent {
     { id: 'missing-date', label: 'Sin fecha estimada', icon: 'event_busy', tone: 'info' },
     { id: 'missing-manager', label: 'Sin gestor asignado', icon: 'person_off', tone: 'accent' }
   ]);
-  readonly availableStatuses = computed(() => Array.from(new Set(this.invoices().map(item => item.status))).sort());
+  readonly availableStatuses = computed(() => Array.from(new Set(this.invoices().map(item => this.normalizeStatus(item.status)))).sort());
   readonly selectedInvoice = computed(() => {
     const selectedId = this.selectedInvoiceId();
     if (!selectedId) {
@@ -939,7 +939,7 @@ export class InvoicesPageComponent {
     return [
       { label: this.scope === 'mine' ? 'Mis facturas' : 'Visibles', value: data.length, tone: 'neutral' },
       { label: 'Con bloqueos', value: data.filter(item => this.hasOperationalBlockers(item)).length, tone: 'info' },
-      { label: 'Por vencer', value: data.filter(item => item.status === 'Por_Vencer').length, tone: 'warning' },
+      { label: 'Por vencer', value: data.filter(item => this.hasStatus(item.status, 'POR_VENCER')).length, tone: 'warning' },
       { label: 'Gestionadas', value: data.filter(item => this.isManaged(item)).length, tone: 'success' }
     ];
   });
@@ -960,7 +960,7 @@ export class InvoicesPageComponent {
         item.refundManagerName ?? ''
       ].some(value => value.toLowerCase().includes(search));
       const matchesSupplier = !supplierId || item.supplierId === supplierId;
-      const matchesStatus = !status || item.status === status;
+      const matchesStatus = !status || this.normalizeStatus(item.status) === this.normalizeStatus(status);
       const matchesManager = !manager
         || (manager === 'unassigned' && !item.refundManagerUserId)
         || item.refundManagerUserId === manager;
@@ -1013,15 +1013,15 @@ export class InvoicesPageComponent {
   }
 
   statusClass(status: string) {
-    switch (status) {
-      case 'Por_Vencer':
+    switch (this.normalizeStatus(status)) {
+      case 'POR_VENCER':
         return 'status-badge--warning';
-      case 'Vencida':
+      case 'VENCIDA':
         return 'status-badge--danger';
-      case 'Gestionada':
+      case 'GESTIONADA':
         return 'status-badge--success';
-      case 'Registrada':
-      case 'En_Gestion':
+      case 'REGISTRADA':
+      case 'EN_GESTION':
         return 'status-badge--info';
       default:
         return 'status-badge--neutral';
@@ -1029,16 +1029,16 @@ export class InvoicesPageComponent {
   }
 
   statusLabel(status: string) {
-    switch (status) {
-      case 'Por_Vencer':
+    switch (this.normalizeStatus(status)) {
+      case 'POR_VENCER':
         return 'Por vencer';
-      case 'Vencida':
+      case 'VENCIDA':
         return 'Vencida';
-      case 'Gestionada':
+      case 'GESTIONADA':
         return 'Gestionada';
-      case 'Registrada':
+      case 'REGISTRADA':
         return 'Registrada';
-      case 'En_Gestion':
+      case 'EN_GESTION':
         return 'En gestión';
       default:
         return status;
@@ -1046,15 +1046,15 @@ export class InvoicesPageComponent {
   }
 
   statusIcon(status: string) {
-    switch (status) {
-      case 'Por_Vencer':
+    switch (this.normalizeStatus(status)) {
+      case 'POR_VENCER':
         return 'schedule';
-      case 'Vencida':
+      case 'VENCIDA':
         return 'warning';
-      case 'Gestionada':
+      case 'GESTIONADA':
         return 'task_alt';
-      case 'Registrada':
-      case 'En_Gestion':
+      case 'REGISTRADA':
+      case 'EN_GESTION':
         return 'receipt_long';
       default:
         return 'info';
@@ -1066,11 +1066,11 @@ export class InvoicesPageComponent {
   }
 
   rowPriorityClass(item: InvoiceItem) {
-    if (item.status === 'Vencida' || this.getOperationalBlockers(item).length >= 2) {
+    if (this.hasStatus(item.status, 'VENCIDA') || this.getOperationalBlockers(item).length >= 2) {
       return 'invoice-priority--critical';
     }
 
-    if (item.status === 'Por_Vencer' || this.getOperationalBlockers(item).length === 1) {
+    if (this.hasStatus(item.status, 'POR_VENCER') || this.getOperationalBlockers(item).length === 1) {
       return 'invoice-priority--attention';
     }
 
@@ -1102,7 +1102,7 @@ export class InvoicesPageComponent {
   }
 
   priorityHeadline(item: InvoiceItem) {
-    if (item.status === 'Vencida') {
+    if (this.hasStatus(item.status, 'VENCIDA')) {
       return 'La factura ya venció y necesita destrabe inmediato.';
     }
 
@@ -1110,7 +1110,7 @@ export class InvoicesPageComponent {
       return `Tiene ${this.getOperationalBlockers(item).length} bloqueos activos.`;
     }
 
-    if (item.status === 'Por_Vencer') {
+    if (this.hasStatus(item.status, 'POR_VENCER')) {
       return 'La fecha límite está cerca y requiere seguimiento.';
     }
 
@@ -1134,7 +1134,7 @@ export class InvoicesPageComponent {
       return 'Acción sugerida: definir la fecha estimada para priorizar bien la gestión.';
     }
 
-    if (item.status === 'Vencida') {
+    if (this.hasStatus(item.status, 'VENCIDA')) {
       return 'Acción sugerida: revisar la gestión y destrabar el caso cuanto antes.';
     }
 
@@ -1335,7 +1335,7 @@ export class InvoicesPageComponent {
   }
 
   isManaged(item: InvoiceItem) {
-    return item.status.toLowerCase() === 'gestionada';
+    return this.hasStatus(item.status, 'GESTIONADA');
   }
 
   isInvoiceBusy(id: string) {
@@ -1357,6 +1357,14 @@ export class InvoicesPageComponent {
 
   private hasOperationalBlockers(item: InvoiceItem) {
     return this.getOperationalBlockers(item).length > 0;
+  }
+
+  private hasStatus(status: string | null | undefined, expected: string) {
+    return this.normalizeStatus(status) === expected;
+  }
+
+  private normalizeStatus(status: string | null | undefined) {
+    return (status ?? '').trim().toUpperCase();
   }
 
   private hasBlocker(item: InvoiceItem, blockerId: InvoiceBlockerId) {

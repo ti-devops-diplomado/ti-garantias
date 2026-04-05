@@ -65,7 +65,7 @@ describe('InvoicesPageComponent', () => {
       refundManagedDate: null,
       refundManagerUserId: 'u-manager',
       refundManagerName: 'Gestor Demo',
-      status: 'Por_Vencer',
+      status: 'POR_VENCER',
       createdByUserName: 'Registrador Demo',
       deliverableIds: ['d1'],
       attachments: []
@@ -87,7 +87,7 @@ describe('InvoicesPageComponent', () => {
       refundManagedDate: null,
       refundManagerUserId: 'u-manager',
       refundManagerName: 'Gestor Demo',
-      status: 'Gestionada',
+      status: 'GESTIONADA',
       createdByUserName: 'Registrador Demo',
       deliverableIds: [],
       attachments: []
@@ -109,7 +109,7 @@ describe('InvoicesPageComponent', () => {
       refundManagedDate: null,
       refundManagerUserId: null,
       refundManagerName: null,
-      status: 'Registrada',
+      status: 'REGISTRADA',
       createdByUserName: 'Registrador Demo',
       deliverableIds: ['d1'],
       attachments: []
@@ -182,6 +182,12 @@ describe('InvoicesPageComponent', () => {
     component.supplierFilter.set('');
     component.statusFilter.set('Gestionada');
     expect(component.filteredInvoices().map(item => item.id)).toEqual(['i2']);
+  });
+
+  it('counts uppercased due soon statuses in headline stats', () => {
+    const dueSoonCard = component.headlineStats().find(item => item.label === 'Por vencer');
+
+    expect(dueSoonCard?.value).toBe(1);
   });
 
   it('filters invoices without assigned manager', () => {

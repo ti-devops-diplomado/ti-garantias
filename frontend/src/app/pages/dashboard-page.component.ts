@@ -585,8 +585,8 @@ export class DashboardPageComponent {
       case 'registrar':
         return [
           { label: 'Mis facturas', value: invoices.length, tone: 'neutral', icon: 'receipt_long' },
-          { label: 'Por vencer', value: this.countByStatus(invoices, 'Por_Vencer'), tone: 'warning', icon: 'schedule' },
-          { label: 'Vencidas', value: this.countByStatus(invoices, 'Vencida'), tone: 'danger', icon: 'warning' },
+          { label: 'Por vencer', value: this.countByStatus(invoices, 'POR_VENCER'), tone: 'warning', icon: 'schedule' },
+          { label: 'Vencidas', value: this.countByStatus(invoices, 'VENCIDA'), tone: 'danger', icon: 'warning' },
           { label: 'Con faltantes', value: invoices.filter(item => this.hasMissingInfo(item)).length, tone: 'info', icon: 'rule' }
         ];
       case 'manager':
@@ -599,9 +599,9 @@ export class DashboardPageComponent {
       case 'admin':
         return [
           { label: 'Total facturas', value: invoices.length, tone: 'neutral', icon: 'inventory_2' },
-          { label: 'Por vencer', value: this.countByStatus(invoices, 'Por_Vencer'), tone: 'warning', icon: 'schedule' },
-          { label: 'Vencidas', value: this.countByStatus(invoices, 'Vencida'), tone: 'danger', icon: 'warning' },
-          { label: 'Gestionadas', value: this.countByStatus(invoices, 'Gestionada'), tone: 'success', icon: 'task_alt' }
+          { label: 'Por vencer', value: this.countByStatus(invoices, 'POR_VENCER'), tone: 'warning', icon: 'schedule' },
+          { label: 'Vencidas', value: this.countByStatus(invoices, 'VENCIDA'), tone: 'danger', icon: 'warning' },
+          { label: 'Gestionadas', value: this.countByStatus(invoices, 'GESTIONADA'), tone: 'success', icon: 'task_alt' }
         ];
       default:
         return [];
@@ -646,7 +646,7 @@ export class DashboardPageComponent {
             route: '/mis-registros',
             cta: 'Abrir registros',
             tone: 'warning',
-            value: invoices.filter(item => item.status === 'Por_Vencer').length,
+            value: invoices.filter(item => this.hasStatus(item.status, 'POR_VENCER')).length,
             icon: 'schedule'
           },
           {
@@ -667,7 +667,7 @@ export class DashboardPageComponent {
             route: '/mis-registros',
             cta: 'Revisar vencidas',
             tone: 'danger',
-            value: invoices.filter(item => item.status === 'Vencida').length,
+            value: invoices.filter(item => this.hasStatus(item.status, 'VENCIDA')).length,
             icon: 'warning'
           }
         ];
@@ -715,7 +715,7 @@ export class DashboardPageComponent {
             route: '/facturas',
             cta: 'Ver facturas',
             tone: 'danger',
-            value: invoices.filter(item => item.status === 'Vencida').length,
+            value: invoices.filter(item => this.hasStatus(item.status, 'VENCIDA')).length,
             icon: 'warning'
           },
           {
@@ -747,7 +747,7 @@ export class DashboardPageComponent {
 
   readonly registrarAlerts = computed(() =>
     this.sortByEstimatedRefundDate(
-      this.invoices().filter(item => item.status === 'Por_Vencer' || item.status === 'Vencida')
+      this.invoices().filter(item => this.hasStatus(item.status, 'POR_VENCER') || this.hasStatus(item.status, 'VENCIDA'))
     ).slice(0, 8)
   );
 
@@ -765,7 +765,7 @@ export class DashboardPageComponent {
 
   readonly adminAlerts = computed(() =>
     this.sortByEstimatedRefundDate(
-      this.invoices().filter(item => item.status === 'Vencida' || item.status === 'Por_Vencer')
+      this.invoices().filter(item => this.hasStatus(item.status, 'VENCIDA') || this.hasStatus(item.status, 'POR_VENCER'))
     ).slice(0, 10)
   );
 
@@ -779,7 +779,7 @@ export class DashboardPageComponent {
         managerName: manager.fullName,
         assigned: assigned.length,
         pending: this.pendingManagedInvoices(assigned).length,
-        managed: assigned.filter(item => item.status === 'Gestionada').length
+        managed: assigned.filter(item => this.hasStatus(item.status, 'GESTIONADA')).length
       };
     }).sort((left, right) => right.pending - left.pending || right.assigned - left.assigned);
   });
@@ -867,16 +867,16 @@ export class DashboardPageComponent {
   }
 
   statusLabel(status: string) {
-    switch (status) {
-      case 'Por_Vencer':
+    switch (this.normalizeStatus(status)) {
+      case 'POR_VENCER':
         return 'Por vencer';
-      case 'Vencida':
+      case 'VENCIDA':
         return 'Vencida';
-      case 'Gestionada':
+      case 'GESTIONADA':
         return 'Gestionada';
-      case 'Registrada':
+      case 'REGISTRADA':
         return 'Registrada';
-      case 'En_Gestion':
+      case 'EN_GESTION':
         return 'En gestión';
       default:
         return status;
@@ -884,15 +884,15 @@ export class DashboardPageComponent {
   }
 
   statusIcon(status: string) {
-    switch (status) {
-      case 'Por_Vencer':
+    switch (this.normalizeStatus(status)) {
+      case 'POR_VENCER':
         return 'schedule';
-      case 'Vencida':
+      case 'VENCIDA':
         return 'warning';
-      case 'Gestionada':
+      case 'GESTIONADA':
         return 'task_alt';
-      case 'Registrada':
-      case 'En_Gestion':
+      case 'REGISTRADA':
+      case 'EN_GESTION':
         return 'receipt_long';
       default:
         return 'info';
@@ -900,15 +900,15 @@ export class DashboardPageComponent {
   }
 
   statusClass(status: string) {
-    switch (status) {
-      case 'Por_Vencer':
+    switch (this.normalizeStatus(status)) {
+      case 'POR_VENCER':
         return 'status-badge--warning';
-      case 'Vencida':
+      case 'VENCIDA':
         return 'status-badge--danger';
-      case 'Gestionada':
+      case 'GESTIONADA':
         return 'status-badge--success';
-      case 'Registrada':
-      case 'En_Gestion':
+      case 'REGISTRADA':
+      case 'EN_GESTION':
         return 'status-badge--info';
       default:
         return 'status-badge--neutral';
@@ -916,11 +916,11 @@ export class DashboardPageComponent {
   }
 
   private pendingManagedInvoices(invoices: InvoiceItem[]) {
-    return invoices.filter(item => item.guaranteeRefundable && item.status !== 'Gestionada');
+    return invoices.filter(item => item.guaranteeRefundable && !this.hasStatus(item.status, 'GESTIONADA'));
   }
 
   private countByStatus(invoices: InvoiceItem[], status: string) {
-    return invoices.filter(item => item.status === status).length;
+    return invoices.filter(item => this.hasStatus(item.status, status)).length;
   }
 
   private hasMissingInfo(item: InvoiceItem) {
@@ -931,6 +931,14 @@ export class DashboardPageComponent {
 
   private hasValue(value: string | null | undefined) {
     return !!value && value.trim().length > 0;
+  }
+
+  private hasStatus(status: string | null | undefined, expected: string) {
+    return this.normalizeStatus(status) === expected;
+  }
+
+  private normalizeStatus(status: string | null | undefined) {
+    return (status ?? '').trim().toUpperCase();
   }
 
   private sortByEstimatedRefundDate(invoices: InvoiceItem[]) {
