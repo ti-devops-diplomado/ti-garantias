@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { InvoicesPageComponent } from './invoices-page.component';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models';
+import { ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from '../core/models';
 
 describe('InvoicesPageComponent', () => {
   let fixture: ComponentFixture<InvoicesPageComponent>;
@@ -40,6 +40,11 @@ describe('InvoicesPageComponent', () => {
 
   const deliverables: Deliverable[] = [
     { id: 'd1', contractId: 'c1', name: 'Entregable 1', description: '' }
+  ];
+
+  const users: UserSummary[] = [
+    { id: 'u-admin', email: 'admin@test.local', fullName: 'Admin Demo', isActive: true, roles: ['Admin'] },
+    { id: 'u-manager', email: 'gestor@test.local', fullName: 'Gestor Demo', isActive: true, roles: ['Gestor'] }
   ];
 
   const invoices: InvoiceItem[] = [
@@ -86,10 +91,33 @@ describe('InvoicesPageComponent', () => {
       createdByUserName: 'Registrador Demo',
       deliverableIds: [],
       attachments: []
+    },
+    {
+      id: 'i3',
+      contractId: 'c1',
+      contractNumber: 'CT-001',
+      contractTitle: 'Contrato Uno',
+      supplierId: 's1',
+      supplierName: 'Proveedor Uno',
+      invoiceNumber: '003-003-111111111',
+      invoiceDate: '2026-02-10',
+      invoiceAmount: 900,
+      purchaseOrder: 'OC-90',
+      retainedAmount: 90,
+      guaranteeRefundable: true,
+      estimatedRefundDate: '2026-05-11',
+      refundManagedDate: null,
+      refundManagerUserId: null,
+      refundManagerName: null,
+      status: 'Registrada',
+      createdByUserName: 'Registrador Demo',
+      deliverableIds: ['d1'],
+      attachments: []
     }
   ];
 
   const apiMock = {
+    getUsers: jasmine.createSpy('getUsers').and.returnValue(of(users)),
     getSuppliers: jasmine.createSpy('getSuppliers').and.returnValue(of(suppliers)),
     getContracts: jasmine.createSpy('getContracts').and.returnValue(of(contracts)),
     getDeliverables: jasmine.createSpy('getDeliverables').and.returnValue(of(deliverables)),
@@ -113,7 +141,7 @@ describe('InvoicesPageComponent', () => {
         provideNativeDateAdapter(),
         { provide: ApiService, useValue: apiMock },
         { provide: AuthService, useValue: authMock },
-        { provide: ActivatedRoute, useValue: { snapshot: { data: { scope: 'all' } } } }
+        { provide: ActivatedRoute, useValue: { snapshot: { data: { scope: 'all' }, queryParamMap: new Map() } } }
       ]
     }).compileComponents();
 
@@ -132,17 +160,46 @@ describe('InvoicesPageComponent', () => {
   });
 
   it('filters invoices by search term, supplier and status', () => {
-    expect(component.filteredInvoices().length).toBe(2);
+    expect(component.filteredInvoices().length).toBe(3);
 
     component.searchTerm.set('987654321');
     expect(component.filteredInvoices().map(item => item.id)).toEqual(['i2']);
 
     component.searchTerm.set('');
     component.supplierFilter.set('s1');
-    expect(component.filteredInvoices().map(item => item.id)).toEqual(['i1']);
+    expect(component.filteredInvoices().map(item => item.id)).toEqual(['i1', 'i3']);
 
     component.supplierFilter.set('');
     component.statusFilter.set('Gestionada');
     expect(component.filteredInvoices().map(item => item.id)).toEqual(['i2']);
+  });
+
+  it('filters invoices without assigned manager', () => {
+    component.managerFilter.set('unassigned');
+
+    expect(component.filteredInvoices().map(item => item.id)).toEqual(['i3']);
+  });
+
+  it('saves the selected manager when updating an invoice', () => {
+    component.startEdit(invoices[2]);
+    component.form.patchValue({
+      supplierId: 's1',
+      contractId: 'c1',
+      invoiceNumber: '003-003-111111111',
+      invoiceDate: new Date('2026-02-10'),
+      invoiceAmount: 900,
+      purchaseOrder: 'OC-90',
+      retainedAmount: 90,
+      guaranteeRefundable: true,
+      estimatedRefundDate: '2026-05-11',
+      deliverableIds: ['d1'],
+      refundManagerUserId: 'u-manager'
+    });
+
+    component.saveInvoice();
+
+    expect(apiMock.saveInvoice).toHaveBeenCalledWith(jasmine.objectContaining({
+      refundManagerUserId: 'u-manager'
+    }), 'i3');
   });
 });

@@ -13,7 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { FeedbackService } from '../core/feedback.service';
-import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from '../core/models';
+import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from '../core/models';
 
 @Component({
   selector: 'app-invoices-page',
@@ -64,6 +64,14 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
             <mat-select [value]="statusFilter()" (selectionChange)="statusFilter.set($event.value || '')">
               <mat-option value="">Todos</mat-option>
               <mat-option *ngFor="let item of availableStatuses()" [value]="item">{{ item }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" *ngIf="canAssignManagers">
+            <mat-label>Gestor</mat-label>
+            <mat-select [value]="managerFilter()" (selectionChange)="managerFilter.set($event.value || '')">
+              <mat-option value="">Todos</mat-option>
+              <mat-option value="unassigned">Sin asignar</mat-option>
+              <mat-option *ngFor="let item of managerUsers()" [value]="item.id">{{ item.fullName }}</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -119,6 +127,9 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
                     <span class="info-badge">{{ item.attachments.length }} adj.</span>
                   </td>
                   <td class="actions">
+                    <button mat-stroked-button type="button" *ngIf="canAssignManagers && !item.refundManagerUserId" (click)="startAssignManager(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
+                      Asignar gestor
+                    </button>
                     <button mat-stroked-button type="button" *ngIf="canEditInvoices" (click)="startEdit(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
                       {{ scope === 'managed' ? 'Completar datos' : 'Editar' }}
                     </button>
@@ -157,6 +168,9 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
             </div>
 
             <div class="detail-panel__actions" *ngIf="scope !== 'mine'">
+              <button mat-stroked-button type="button" *ngIf="canAssignManagers" (click)="startAssignManager(selected)" [disabled]="isInvoiceBusy(selected.id) || savingForm()">
+                {{ selected.refundManagerUserId ? 'Reasignar gestor' : 'Asignar gestor' }}
+              </button>
               <button mat-flat-button color="primary" type="button" *ngIf="canEditInvoices" (click)="startEdit(selected)" [disabled]="isInvoiceBusy(selected.id) || savingForm()">
                 {{ scope === 'managed' ? 'Completar datos' : 'Editar factura' }}
               </button>
@@ -219,6 +233,9 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
               <small>Sin adjuntos</small>
             </ng-template>
             <div class="actions mobile-actions">
+              <button mat-stroked-button type="button" *ngIf="canAssignManagers" (click)="startAssignManager(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
+                {{ item.refundManagerUserId ? 'Reasignar gestor' : 'Asignar gestor' }}
+              </button>
               <button mat-stroked-button type="button" *ngIf="canEditInvoices" (click)="startEdit(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
                 {{ scope === 'managed' ? 'Completar datos' : 'Editar' }}
               </button>
@@ -324,6 +341,14 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier } from
                 <mat-option *ngFor="let item of filteredDeliverables()" [value]="item.id">{{ item.name }}</mat-option>
               </mat-select>
               <mat-hint>{{ form.controls.contractId.value ? 'Selecciona uno o varios entregables asociados.' : 'Primero elige un contrato.' }}</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" *ngIf="canAssignManagers">
+              <mat-label>Gestor responsable</mat-label>
+              <mat-select formControlName="refundManagerUserId">
+                <mat-option value="">Sin asignar</mat-option>
+                <mat-option *ngFor="let item of managerUsers()" [value]="item.id">{{ item.fullName }}</mat-option>
+              </mat-select>
+              <mat-hint>{{ managerUsers().length ? 'Asigna o reasigna la factura a un gestor activo.' : 'No hay gestores activos disponibles.' }}</mat-hint>
             </mat-form-field>
             <mat-checkbox formControlName="guaranteeRefundable">Aplica devolución</mat-checkbox>
             <div class="form-actions">
@@ -666,6 +691,7 @@ export class InvoicesPageComponent {
   readonly suppliers = signal<Supplier[]>([]);
   readonly contracts = signal<ContractItem[]>([]);
   readonly deliverables = signal<Deliverable[]>([]);
+  readonly users = signal<UserSummary[]>([]);
   readonly invoices = signal<InvoiceItem[]>([]);
   readonly editingInvoiceId = signal<string | null>(null);
   readonly selectedInvoiceId = signal<string | null>(null);
@@ -676,6 +702,7 @@ export class InvoicesPageComponent {
   readonly searchTerm = signal('');
   readonly supplierFilter = signal('');
   readonly statusFilter = signal('');
+  readonly managerFilter = signal(this.route.snapshot.queryParamMap.get('manager') ?? '');
   readonly scope = this.route.snapshot.data['scope'] as string ?? 'all';
   readonly title = this.scope === 'mine' ? 'Mis registros' : this.scope === 'managed' ? 'Pendientes por gestionar' : 'Facturas';
   readonly pageEyebrow = this.scope === 'mine' ? 'Seguimiento personal' : this.scope === 'managed' ? 'Gestion operativa' : 'Control documental';
@@ -692,6 +719,12 @@ export class InvoicesPageComponent {
   readonly canCreateInvoices = this.scope === 'all' && this.auth.hasAnyRole(['Registrador', 'Admin']);
   readonly canManageInvoices = this.auth.hasAnyRole(['Gestor', 'Admin']);
   readonly canEditInvoices = this.scope !== 'mine' && this.auth.hasAnyRole(['Registrador', 'Gestor', 'Admin']);
+  readonly canAssignManagers = this.auth.hasAnyRole(['Admin']);
+  readonly managerUsers = computed(() =>
+    this.users()
+      .filter(item => item.isActive && item.roles.includes('Gestor'))
+      .sort((left, right) => left.fullName.localeCompare(right.fullName))
+  );
   readonly availableStatuses = computed(() => Array.from(new Set(this.invoices().map(item => item.status))).sort());
   readonly selectedInvoice = computed(() => {
     const selectedId = this.selectedInvoiceId();
@@ -702,7 +735,7 @@ export class InvoicesPageComponent {
     return this.filteredInvoices().find(item => item.id === selectedId) ?? null;
   });
   readonly hasActiveFilters = computed(() =>
-    !!this.searchTerm().trim() || !!this.supplierFilter() || !!this.statusFilter()
+    !!this.searchTerm().trim() || !!this.supplierFilter() || !!this.statusFilter() || !!this.managerFilter()
   );
   readonly emptyListTitle = computed(() => this.hasActiveFilters() ? 'No encontramos coincidencias' : 'Todavia no hay facturas');
   readonly emptyListMessage = computed(() => {
@@ -735,6 +768,7 @@ export class InvoicesPageComponent {
     const search = this.searchTerm().trim().toLowerCase();
     const supplierId = this.supplierFilter();
     const status = this.statusFilter();
+    const manager = this.managerFilter();
 
     return this.invoices().filter(item => {
       const matchesSearch = !search || [
@@ -747,7 +781,10 @@ export class InvoicesPageComponent {
       ].some(value => value.toLowerCase().includes(search));
       const matchesSupplier = !supplierId || item.supplierId === supplierId;
       const matchesStatus = !status || item.status === status;
-      return matchesSearch && matchesSupplier && matchesStatus;
+      const matchesManager = !manager
+        || (manager === 'unassigned' && !item.refundManagerUserId)
+        || item.refundManagerUserId === manager;
+      return matchesSearch && matchesSupplier && matchesStatus && matchesManager;
     });
   });
 
@@ -761,7 +798,8 @@ export class InvoicesPageComponent {
     retainedAmount: [0, Validators.required],
     guaranteeRefundable: [true],
     estimatedRefundDate: [''],
-    deliverableIds: [[] as string[]]
+    deliverableIds: [[] as string[]],
+    refundManagerUserId: ['']
   });
 
   constructor() {
@@ -845,11 +883,16 @@ export class InvoicesPageComponent {
       retainedAmount: item.retainedAmount,
       guaranteeRefundable: item.guaranteeRefundable,
       estimatedRefundDate: item.estimatedRefundDate ?? '',
-      deliverableIds: item.deliverableIds
+      deliverableIds: item.deliverableIds,
+      refundManagerUserId: item.refundManagerUserId ?? ''
     }, { emitEvent: false });
     this.recalculateEstimatedRefundDate();
     this.form.markAsPristine();
     this.showFormModal.set(true);
+  }
+
+  startAssignManager(item: InvoiceItem) {
+    this.startEdit(item);
   }
 
   cancelEdit() {
@@ -884,6 +927,7 @@ export class InvoicesPageComponent {
     this.searchTerm.set('');
     this.supplierFilter.set('');
     this.statusFilter.set('');
+    this.managerFilter.set('');
     this.selectedInvoiceId.set(null);
   }
 
@@ -920,7 +964,8 @@ export class InvoicesPageComponent {
     this.api.saveInvoice({
       ...rawValue,
       invoiceDate,
-      estimatedRefundDate
+      estimatedRefundDate,
+      refundManagerUserId: rawValue.refundManagerUserId || null
     }, editingInvoiceId ?? undefined).subscribe({
       next: () => {
         this.feedback.success(editingInvoiceId ? 'Factura actualizada.' : 'Factura creada.');
@@ -985,6 +1030,14 @@ export class InvoicesPageComponent {
   }
 
   private reload(preferredInvoiceId?: string) {
+    if (this.canAssignManagers) {
+      this.api.getUsers().subscribe({
+        next: data => this.users.set(data),
+        error: () => this.feedback.error('No fue posible cargar los gestores disponibles.')
+      });
+    } else {
+      this.users.set([]);
+    }
     this.api.getSuppliers().subscribe({
       next: data => this.suppliers.set(data),
       error: () => this.feedback.error('No fue posible cargar los proveedores.')
@@ -1067,7 +1120,8 @@ export class InvoicesPageComponent {
       retainedAmount: 0,
       guaranteeRefundable: true,
       estimatedRefundDate: '',
-      deliverableIds: []
+      deliverableIds: [],
+      refundManagerUserId: ''
     }, { emitEvent: false });
     this.recalculateEstimatedRefundDate();
     this.form.markAsPristine();
