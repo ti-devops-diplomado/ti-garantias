@@ -29,6 +29,7 @@ interface FocusCard {
   title: string;
   detail: string;
   route: string;
+  queryParams?: Record<string, string>;
   cta: string;
   tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success';
   value: number;
@@ -84,7 +85,7 @@ interface ManagerLoadRow {
             <strong class="focus-card__value">{{ item.value }}</strong>
             <h3>{{ item.title }}</h3>
             <p class="focus-card__detail">{{ item.detail }}</p>
-            <a mat-stroked-button [routerLink]="item.route">{{ item.cta }}</a>
+            <a mat-stroked-button [routerLink]="item.route" [queryParams]="item.queryParams ?? null">{{ item.cta }}</a>
           </mat-card>
         </section>
 
@@ -646,6 +647,7 @@ export class DashboardPageComponent {
             title: 'Sin gestor asignado',
             detail: 'Facturas sin responsable claro para avanzar el proceso.',
             route: '/facturas',
+            queryParams: { manager: 'unassigned' },
             cta: 'Asignar responsables',
             tone: 'warning',
             value: invoices.filter(item => !this.hasValue(item.refundManagerName)).length
