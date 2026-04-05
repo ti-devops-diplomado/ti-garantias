@@ -103,7 +103,7 @@ interface PendingUserAction {
         <button mat-stroked-button type="button" *ngIf="hasActiveFilters()" (click)="clearFilters()">Ver todo</button>
       </div>
 
-      <div class="table-wrap desktop-only" *ngIf="filteredUsers().length">
+      <div class="table-wrap" *ngIf="filteredUsers().length">
       <table>
         <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Roles</th><th>Acciones</th></tr></thead>
         <tbody>
@@ -113,6 +113,9 @@ interface PendingUserAction {
             <td>{{ item.isActive ? 'Activo' : 'Inactivo' }}</td>
             <td>{{ item.roles.join(', ') }}</td>
             <td class="actions">
+              <button mat-stroked-button type="button" (click)="editUser(item)" [disabled]="actionInProgress() || saving()">
+                Editar
+              </button>
               <button mat-stroked-button type="button" (click)="requestToggleStatus(item)" [disabled]="actionInProgress()">
                 {{ item.isActive ? 'Desactivar' : 'Activar' }}
               </button>
@@ -122,21 +125,6 @@ interface PendingUserAction {
         </tbody>
       </table>
       </div>
-
-      <div class="mobile-only user-cards" *ngIf="filteredUsers().length">
-        <article class="user-card" *ngFor="let item of filteredUsers()">
-          <h3>{{ item.fullName }}</h3>
-          <p>{{ item.email }}</p>
-          <p><strong>Estado:</strong> {{ item.isActive ? 'Activo' : 'Inactivo' }}</p>
-          <p><strong>Roles:</strong> {{ item.roles.join(', ') }}</p>
-          <div class="actions mobile-actions">
-            <button mat-stroked-button type="button" (click)="requestToggleStatus(item)" [disabled]="actionInProgress()">
-              {{ item.isActive ? 'Desactivar' : 'Activar' }}
-            </button>
-            <button mat-stroked-button type="button" (click)="requestResetPassword(item)" [disabled]="actionInProgress()">Resetear clave</button>
-          </div>
-        </article>
-      </div>
       <p class="hint">El reseteo asigna la clave temporal <code>Temporal123!</code>.</p>
     </mat-card>
 
@@ -144,8 +132,12 @@ interface PendingUserAction {
       <mat-card class="surface-card modal-card" (click)="$event.stopPropagation()">
         <div class="section-header modal-header">
           <div>
-            <h2>Nuevo usuario</h2>
-            <p class="section-help">Crea el usuario desde una ventana más amplia y cómoda, sin perder el contexto del listado.</p>
+            <h2>{{ editingUserId() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+            <p class="section-help">
+              {{ editingUserId()
+                ? 'Actualiza nombre, correo, roles o estado del usuario sin salir del listado.'
+                : 'Crea el usuario desde una ventana más amplia y cómoda, sin perder el contexto del listado.' }}
+            </p>
           </div>
           <button mat-icon-button class="icon-button icon-button--ghost icon-button--danger" type="button" (click)="requestCloseForm()" aria-label="Cerrar formulario">
             <mat-icon>close</mat-icon>
@@ -154,12 +146,16 @@ interface PendingUserAction {
         <form [formGroup]="form" (ngSubmit)="save()">
           <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="fullName" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Correo</mat-label><input matInput formControlName="email" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Contraseña temporal</mat-label><input matInput formControlName="password" /></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ editingUserId() ? 'Nueva contraseña temporal (opcional)' : 'Contraseña temporal' }}</mat-label>
+            <input matInput formControlName="password" />
+            <mat-hint *ngIf="editingUserId()">Déjalo vacío si no quieres cambiar la contraseña.</mat-hint>
+          </mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Roles</mat-label><mat-select formControlName="roles" multiple><mat-option *ngFor="let role of roles" [value]="role">{{ role }}</mat-option></mat-select></mat-form-field>
           <mat-checkbox formControlName="isActive">Activo</mat-checkbox>
           <div class="actions">
             <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
-              {{ saving() ? 'Guardando...' : 'Guardar usuario' }}
+              {{ saving() ? 'Guardando...' : (editingUserId() ? 'Actualizar usuario' : 'Guardar usuario') }}
             </button>
             <button mat-stroked-button type="button" (click)="requestCloseForm()" [disabled]="saving()">Cancelar</button>
           </div>
@@ -255,10 +251,6 @@ interface PendingUserAction {
       color: var(--color-ink-muted);
       background: rgba(245, 239, 230, 0.66);
     }
-    .mobile-only { display: none; }
-    .user-cards { display: grid; gap: 12px; }
-    .user-card { padding: 18px; border: 1px solid var(--color-border); border-radius: 22px; background: rgba(255, 255, 255, 0.88); box-shadow: var(--shadow-soft); }
-    .user-card h3, .user-card p { margin: 0 0 8px; }
     .modal-card {
       width: min(880px, calc(100vw - 32px));
       max-height: calc(100vh - 48px);
@@ -281,13 +273,11 @@ interface PendingUserAction {
         grid-template-columns: 1fr auto;
         align-items: start;
       }
-      .desktop-only { display: none; }
-      .mobile-only { display: grid; }
-      .mobile-actions {
+      .actions {
         display: grid;
         grid-template-columns: 1fr;
       }
-      .mobile-actions button {
+      .actions button {
         width: 100%;
       }
       .modal-shell {
@@ -300,8 +290,7 @@ interface PendingUserAction {
       }
     }
     @media (max-width: 480px) {
-      .confirm-panel,
-      .user-card {
+      .confirm-panel {
         padding: 16px;
         border-radius: 18px;
       }
@@ -325,6 +314,7 @@ export class UsersPageComponent {
 
   readonly roles = ['Admin', 'Registrador', 'Gestor', 'Auditor'];
   readonly users = signal<UserSummary[]>([]);
+  readonly editingUserId = signal<string | null>(null);
   readonly message = signal('');
   readonly showForm = signal(false);
   readonly discardDraftPrompt = signal(false);
@@ -362,7 +352,19 @@ export class UsersPageComponent {
   }
 
   openForm() {
-    this.form.reset({ fullName: '', email: '', password: 'Temporal123!', roles: ['Registrador'], isActive: true });
+    this.resetForm();
+    this.showForm.set(true);
+  }
+
+  editUser(user: UserSummary) {
+    this.editingUserId.set(user.id);
+    this.form.reset({
+      fullName: user.fullName,
+      email: user.email,
+      password: '',
+      roles: [...user.roles],
+      isActive: user.isActive
+    });
     this.form.markAsPristine();
     this.discardDraftPrompt.set(false);
     this.showForm.set(true);
@@ -382,11 +384,13 @@ export class UsersPageComponent {
     if (this.form.invalid) return;
     this.message.set('');
     this.saving.set(true);
-    this.api.saveUser(this.form.getRawValue()).subscribe({
+    const editingUserId = this.editingUserId();
+    this.api.saveUser(this.form.getRawValue(), editingUserId ?? undefined).subscribe({
       next: () => {
-        this.form.reset({ fullName: '', email: '', password: 'Temporal123!', roles: ['Registrador'], isActive: true });
-        this.message.set('Usuario creado correctamente.');
-        this.feedback.success('Usuario creado correctamente.');
+        const successMessage = editingUserId ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.';
+        this.resetForm();
+        this.message.set(successMessage);
+        this.feedback.success(successMessage);
         this.showForm.set(false);
         this.reload();
       },
@@ -401,8 +405,7 @@ export class UsersPageComponent {
   closeForm() {
     this.discardDraftPrompt.set(false);
     this.showForm.set(false);
-    this.form.reset({ fullName: '', email: '', password: 'Temporal123!', roles: ['Registrador'], isActive: true });
-    this.form.markAsPristine();
+    this.resetForm();
   }
 
   requestCloseForm() {
@@ -476,5 +479,12 @@ export class UsersPageComponent {
         this.feedback.error('No fue posible cargar los usuarios.');
       }
     });
+  }
+
+  private resetForm() {
+    this.editingUserId.set(null);
+    this.form.reset({ fullName: '', email: '', password: 'Temporal123!', roles: ['Registrador'], isActive: true });
+    this.form.markAsPristine();
+    this.discardDraftPrompt.set(false);
   }
 }
