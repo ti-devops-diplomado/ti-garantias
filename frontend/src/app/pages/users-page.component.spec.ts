@@ -69,4 +69,28 @@ describe('UsersPageComponent', () => {
     component.statusFilter.set('Inactivo');
     expect(component.filteredUsers().map(item => item.id)).toEqual(['u2']);
   });
+
+  it('opens the form in edit mode and saves the selected user', () => {
+    component.editUser(users[1]);
+
+    expect(component.showForm()).toBeTrue();
+    expect(component.editingUserId()).toBe('u2');
+    expect(component.form.getRawValue().email).toBe('gestor@test.local');
+
+    component.form.patchValue({
+      fullName: 'Gestor Editado',
+      email: 'gestor.editado@test.local',
+      roles: ['Admin', 'Gestor'],
+      password: ''
+    });
+
+    component.save();
+
+    expect(apiMock.saveUser).toHaveBeenCalledWith(jasmine.objectContaining({
+      fullName: 'Gestor Editado',
+      email: 'gestor.editado@test.local',
+      roles: ['Admin', 'Gestor'],
+      password: ''
+    }), 'u2');
+  });
 });
