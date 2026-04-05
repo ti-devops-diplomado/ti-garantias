@@ -283,6 +283,26 @@ body .mat-mdc-icon-button.icon-button--danger {
   min-width: 0;
 }
 
+.hero-stat--warning {
+  background: linear-gradient(180deg, rgba(255, 241, 214, 0.2), rgba(255, 255, 255, 0.08));
+  border-color: rgba(255, 201, 122, 0.34);
+}
+
+.hero-stat--danger {
+  background: linear-gradient(180deg, rgba(253, 231, 228, 0.24), rgba(255, 255, 255, 0.08));
+  border-color: rgba(239, 155, 145, 0.34);
+}
+
+.hero-stat--success {
+  background: linear-gradient(180deg, rgba(230, 244, 238, 0.2), rgba(255, 255, 255, 0.08));
+  border-color: rgba(112, 188, 151, 0.28);
+}
+
+.hero-stat--info {
+  background: linear-gradient(180deg, rgba(234, 245, 255, 0.18), rgba(255, 255, 255, 0.08));
+  border-color: rgba(132, 191, 234, 0.32);
+}
+
 .hero-stat__label {
   margin: 0 0 8px;
   font-size: 12px;
@@ -570,6 +590,7 @@ body .mat-mdc-icon-button.icon-button--danger {
 .info-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: 34px;
   padding: 7px 14px;
@@ -577,6 +598,7 @@ body .mat-mdc-icon-button.icon-button--danger {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.01em;
+  border: 1px solid transparent;
 }
 
 .status-badge::before {
@@ -587,30 +609,87 @@ body .mat-mdc-icon-button.icon-button--danger {
   background: currentColor;
 }
 
+.status-badge.status-badge--with-icon::before {
+  display: none;
+}
+
+.status-badge .mat-icon,
+.info-badge .mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  line-height: 1;
+  color: currentColor;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 500,
+    'GRAD' 0,
+    'opsz' 20;
+}
+
 .status-badge--neutral,
 .info-badge {
   color: var(--color-ink);
   background: rgba(23, 50, 77, 0.08);
+  border-color: rgba(23, 50, 77, 0.12);
 }
 
 .status-badge--warning {
   color: var(--color-warning);
   background: var(--color-warning-soft);
+  border-color: rgba(154, 100, 0, 0.2);
 }
 
 .status-badge--danger {
   color: var(--color-danger);
   background: var(--color-danger-soft);
+  border-color: rgba(194, 77, 55, 0.22);
 }
 
 .status-badge--success {
   color: var(--color-success);
   background: var(--color-success-soft);
+  border-color: rgba(31, 122, 85, 0.18);
 }
 
 .status-badge--info {
   color: var(--color-accent);
   background: var(--color-accent-soft);
+  border-color: rgba(23, 76, 116, 0.18);
+}
+
+.info-badge {
+  background: rgba(23, 50, 77, 0.06);
+}
+
+.info-badge--quiet {
+  color: var(--color-ink-soft);
+  background: rgba(23, 50, 77, 0.04);
+  border-color: rgba(23, 50, 77, 0.08);
+}
+
+.info-badge--warning {
+  color: #9a4d00;
+  background: #fff4e8;
+  border-color: #f4b46a;
+}
+
+.info-badge--info {
+  color: #165a8a;
+  background: #eaf5ff;
+  border-color: #84bfea;
+}
+
+.info-badge--accent {
+  color: #5e3a9e;
+  background: #f4eeff;
+  border-color: #b79ae6;
+}
+
+.info-badge--danger {
+  color: #b42318;
+  background: #fde7e4;
+  border-color: #ef9b91;
 }
 
 .upload-action {
