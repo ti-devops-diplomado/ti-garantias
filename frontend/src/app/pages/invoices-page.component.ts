@@ -20,6 +20,8 @@ type InvoiceBlockerId = 'missing-po' | 'missing-date' | 'missing-manager';
 interface InvoiceBlocker {
   id: InvoiceBlockerId;
   label: string;
+  icon: string;
+  tone: 'warning' | 'info' | 'accent';
 }
 
 @Component({
@@ -122,10 +124,12 @@ interface InvoiceBlocker {
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let item of filteredInvoices()" (click)="selectInvoice(item.id)" [class.row-selected]="selectedInvoiceId() === item.id">
+                <tr *ngFor="let item of filteredInvoices()" (click)="selectInvoice(item.id)" [ngClass]="[selectedInvoiceId() === item.id ? 'row-selected' : '', rowPriorityClass(item)]">
                   <td>
-                    <strong>{{ item.invoiceNumber }}</strong>
-                    <small>Creada por {{ item.createdByUserName }}</small>
+                    <div class="invoice-primary">
+                      <strong>{{ item.invoiceNumber }}</strong>
+                      <small>Creada por {{ item.createdByUserName }}</small>
+                    </div>
                   </td>
                   <td>{{ item.supplierName }}</td>
                   <td>{{ invoiceContractLabel(item) }}</td>
@@ -134,12 +138,18 @@ interface InvoiceBlocker {
                   <td>{{ item.purchaseOrder || 'Sin OC' }}</td>
                   <td>{{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</td>
                   <td>
-                    <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                    <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(item.status)">
+                      <mat-icon>{{ statusIcon(item.status) }}</mat-icon>
+                      {{ statusLabel(item.status) }}
+                    </span>
                   </td>
                   <td>{{ item.refundManagerName || 'Sin asignar' }}</td>
-                  <td>
-                    <span class="info-badge" *ngFor="let blocker of blockerTokens(item)">{{ blocker }}</span>
-                    <span class="info-badge" *ngIf="!blockerTokens(item).length">Sin bloqueos</span>
+                  <td class="blocker-stack">
+                    <span class="info-badge" [ngClass]="'info-badge--' + blocker.tone" *ngFor="let blocker of blockerBadges(item)">
+                      <mat-icon>{{ blocker.icon }}</mat-icon>
+                      {{ blocker.label }}
+                    </span>
+                    <span class="info-badge info-badge--quiet" *ngIf="!blockerBadges(item).length">Sin bloqueos</span>
                   </td>
                   <td class="actions">
                     <button mat-stroked-button type="button" *ngIf="canAssignManagers && !item.refundManagerUserId" (click)="startAssignManager(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
@@ -163,10 +173,22 @@ interface InvoiceBlocker {
             <p class="detail-panel__subtitle">{{ selected.supplierName }}</p>
             <p class="detail-panel__copy">{{ invoiceContractLabel(selected) }}</p>
 
+            <section class="detail-priority" [ngClass]="detailPriorityClass(selected)">
+              <p class="detail-priority__eyebrow">{{ priorityLabel(selected) }}</p>
+              <strong>{{ priorityHeadline(selected) }}</strong>
+              <p>{{ suggestedAction(selected) }}</p>
+            </section>
+
             <div class="pill-row">
-              <span class="status-badge" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span>
-              <span class="info-badge" *ngFor="let token of blockerTokens(selected)">{{ token }}</span>
-              <span class="info-badge" *ngIf="!blockerTokens(selected).length">Sin bloqueos operativos</span>
+              <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(selected.status)">
+                <mat-icon>{{ statusIcon(selected.status) }}</mat-icon>
+                {{ statusLabel(selected.status) }}
+              </span>
+              <span class="info-badge" [ngClass]="'info-badge--' + blocker.tone" *ngFor="let blocker of blockerBadges(selected)">
+                <mat-icon>{{ blocker.icon }}</mat-icon>
+                {{ blocker.label }}
+              </span>
+              <span class="info-badge info-badge--quiet" *ngIf="!blockerBadges(selected).length">Sin bloqueos operativos</span>
             </div>
 
             <div class="detail-panel__facts">
@@ -175,7 +197,7 @@ interface InvoiceBlocker {
               <p><strong>OC:</strong> {{ selected.purchaseOrder || 'Sin OC' }}</p>
               <p><strong>Retenido:</strong> {{ selected.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
               <p><strong>Gestor:</strong> {{ selected.refundManagerName || 'Sin asignar' }}</p>
-              <p><strong>Bloqueos:</strong> {{ blockerTokens(selected).length || 'Sin bloqueos' }}</p>
+              <p><strong>Bloqueos:</strong> {{ blockerBadges(selected).length || 'Sin bloqueos' }}</p>
             </div>
 
             <div class="detail-panel__actions" *ngIf="scope !== 'mine'">
@@ -219,22 +241,36 @@ interface InvoiceBlocker {
         </div>
 
         <div class="cards mobile-only" *ngIf="filteredInvoices().length">
-          <article class="invoice" *ngFor="let item of filteredInvoices()">
+          <article class="invoice" *ngFor="let item of filteredInvoices()" [ngClass]="rowPriorityClass(item)">
             <div class="invoice-header">
               <div>
                 <h3>{{ item.invoiceNumber }}</h3>
                 <p>{{ item.supplierName }}</p>
               </div>
-              <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+              <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(item.status)">
+                <mat-icon>{{ statusIcon(item.status) }}</mat-icon>
+                {{ statusLabel(item.status) }}
+              </span>
             </div>
             <p>{{ invoiceContractLabel(item) }}</p>
+            <section class="mobile-priority-banner" [ngClass]="detailPriorityClass(item)">
+              <p class="mobile-priority-banner__title">{{ priorityHeadline(item) }}</p>
+              <p>{{ suggestedAction(item) }}</p>
+            </section>
             <div class="detail-grid">
               <p><strong>Inicio:</strong> {{ item.invoiceDate }}</p>
               <p><strong>Vencimiento:</strong> {{ item.estimatedRefundDate || 'Pendiente' }}</p>
               <p><strong>OC:</strong> {{ item.purchaseOrder || 'Sin OC' }}</p>
               <p><strong>Retenido:</strong> {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
               <p><strong>Gestor:</strong> {{ item.refundManagerName || 'Sin asignar' }}</p>
-              <p><strong>Bloqueos:</strong> {{ blockerTokens(item).length || 'Sin bloqueos' }}</p>
+              <p><strong>Bloqueos:</strong> {{ blockerBadges(item).length || 'Sin bloqueos' }}</p>
+            </div>
+            <div class="pill-row">
+              <span class="info-badge" [ngClass]="'info-badge--' + blocker.tone" *ngFor="let blocker of blockerBadges(item)">
+                <mat-icon>{{ blocker.icon }}</mat-icon>
+                {{ blocker.label }}
+              </span>
+              <span class="info-badge info-badge--quiet" *ngIf="!blockerBadges(item).length">Sin bloqueos operativos</span>
             </div>
             <div class="actions mobile-actions">
               <button mat-stroked-button type="button" *ngIf="canAssignManagers" (click)="startAssignManager(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
@@ -255,10 +291,6 @@ interface InvoiceBlocker {
             </div>
 
             <section class="mobile-detail-panel" *ngIf="selectedInvoiceId() === item.id">
-              <div class="pill-row">
-                <span class="info-badge" *ngFor="let token of blockerTokens(item)">{{ token }}</span>
-                <span class="info-badge" *ngIf="!blockerTokens(item).length">Sin bloqueos operativos</span>
-              </div>
               <p><strong>Creada por:</strong> {{ item.createdByUserName }}</p>
               <p><strong>Valor factura:</strong> {{ item.invoiceAmount | currency:'USD':'symbol':'1.0-0' }}</p>
               <div class="timeline-card">
@@ -403,14 +435,20 @@ interface InvoiceBlocker {
                 <h3>{{ item.invoiceNumber }}</h3>
                 <p>{{ item.supplierName }} / {{ invoiceContractLabel(item) }}</p>
               </div>
-              <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+              <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(item.status)">
+                <mat-icon>{{ statusIcon(item.status) }}</mat-icon>
+                {{ statusLabel(item.status) }}
+              </span>
             </div>
             <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
             <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
             <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
             <div class="pill-row">
-              <span class="info-badge" *ngFor="let token of blockerTokens(item)">{{ token }}</span>
-              <span class="info-badge" *ngIf="!blockerTokens(item).length">Sin bloqueos operativos</span>
+              <span class="info-badge" [ngClass]="'info-badge--' + blocker.tone" *ngFor="let blocker of blockerBadges(item)">
+                <mat-icon>{{ blocker.icon }}</mat-icon>
+                {{ blocker.label }}
+              </span>
+              <span class="info-badge info-badge--quiet" *ngIf="!blockerBadges(item).length">Sin bloqueos operativos</span>
             </div>
             <div class="mobile-detail-toggle">
               <button mat-button type="button" (click)="toggleInvoiceSelection(item.id)">
@@ -527,13 +565,34 @@ interface InvoiceBlocker {
     tbody tr.row-selected {
       background: rgba(220, 239, 253, 0.44);
     }
+    tbody tr.invoice-priority--critical td:first-child,
+    .invoice.invoice-priority--critical {
+      box-shadow: inset 4px 0 0 #c24d37;
+    }
+    tbody tr.invoice-priority--attention td:first-child,
+    .invoice.invoice-priority--attention {
+      box-shadow: inset 4px 0 0 #c28a2e;
+    }
+    tbody tr.invoice-priority--stable td:first-child,
+    .invoice.invoice-priority--stable {
+      box-shadow: inset 4px 0 0 rgba(23, 76, 116, 0.22);
+    }
     td strong,
     td small {
       display: block;
     }
+    .invoice-primary {
+      display: grid;
+      gap: 6px;
+    }
     td small {
       margin-top: 4px;
       color: var(--color-ink-soft);
+    }
+    .blocker-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     th {
       font-size: 12px;
@@ -572,6 +631,48 @@ interface InvoiceBlocker {
       margin-top: 6px;
       color: var(--color-ink-soft);
     }
+    .detail-priority,
+    .mobile-priority-banner {
+      display: grid;
+      gap: 6px;
+      margin-top: 16px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid transparent;
+    }
+    .detail-priority p,
+    .detail-priority strong,
+    .mobile-priority-banner p {
+      margin: 0;
+    }
+    .detail-priority__eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+      color: var(--color-ink-muted);
+    }
+    .detail-priority strong,
+    .mobile-priority-banner__title {
+      color: var(--color-accent-strong);
+      font-size: 1rem;
+      font-weight: 800;
+    }
+    .detail-priority--critical,
+    .mobile-priority-banner--critical {
+      background: linear-gradient(180deg, #fff2ef, #fde7e4);
+      border-color: rgba(194, 77, 55, 0.18);
+    }
+    .detail-priority--attention,
+    .mobile-priority-banner--attention {
+      background: linear-gradient(180deg, #fff8ea, #fff2db);
+      border-color: rgba(194, 138, 46, 0.22);
+    }
+    .detail-priority--stable,
+    .mobile-priority-banner--stable {
+      background: linear-gradient(180deg, #f6fbff, #edf5fb);
+      border-color: rgba(23, 76, 116, 0.14);
+    }
     .detail-panel__facts {
       display: grid;
       gap: 10px;
@@ -605,6 +706,9 @@ interface InvoiceBlocker {
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 10px;
+    }
+    .mobile-priority-banner {
+      margin-bottom: 14px;
     }
     .detail-grid { display: grid; gap: 8px; margin: 14px 0; color: var(--color-ink-soft); }
     .mobile-detail-toggle {
@@ -795,9 +899,9 @@ export class InvoicesPageComponent {
       .sort((left, right) => left.fullName.localeCompare(right.fullName))
   );
   readonly availableBlockers = computed<InvoiceBlocker[]>(() => [
-    { id: 'missing-po', label: 'Sin OC' },
-    { id: 'missing-date', label: 'Sin fecha estimada' },
-    { id: 'missing-manager', label: 'Sin gestor asignado' }
+    { id: 'missing-po', label: 'Sin OC', icon: 'description', tone: 'warning' },
+    { id: 'missing-date', label: 'Sin fecha estimada', icon: 'event_busy', tone: 'info' },
+    { id: 'missing-manager', label: 'Sin gestor asignado', icon: 'person_off', tone: 'accent' }
   ]);
   readonly availableStatuses = computed(() => Array.from(new Set(this.invoices().map(item => item.status))).sort());
   readonly selectedInvoice = computed(() => {
@@ -924,8 +1028,117 @@ export class InvoicesPageComponent {
     }
   }
 
-  blockerTokens(item: InvoiceItem) {
-    return this.getOperationalBlockers(item).map(blocker => blocker.label);
+  statusLabel(status: string) {
+    switch (status) {
+      case 'Por_Vencer':
+        return 'Por vencer';
+      case 'Vencida':
+        return 'Vencida';
+      case 'Gestionada':
+        return 'Gestionada';
+      case 'Registrada':
+        return 'Registrada';
+      case 'En_Gestion':
+        return 'En gestión';
+      default:
+        return status;
+    }
+  }
+
+  statusIcon(status: string) {
+    switch (status) {
+      case 'Por_Vencer':
+        return 'schedule';
+      case 'Vencida':
+        return 'warning';
+      case 'Gestionada':
+        return 'task_alt';
+      case 'Registrada':
+      case 'En_Gestion':
+        return 'receipt_long';
+      default:
+        return 'info';
+    }
+  }
+
+  blockerBadges(item: InvoiceItem) {
+    return this.getOperationalBlockers(item);
+  }
+
+  rowPriorityClass(item: InvoiceItem) {
+    if (item.status === 'Vencida' || this.getOperationalBlockers(item).length >= 2) {
+      return 'invoice-priority--critical';
+    }
+
+    if (item.status === 'Por_Vencer' || this.getOperationalBlockers(item).length === 1) {
+      return 'invoice-priority--attention';
+    }
+
+    return 'invoice-priority--stable';
+  }
+
+  detailPriorityClass(item: InvoiceItem) {
+    if (this.rowPriorityClass(item) === 'invoice-priority--critical') {
+      return 'detail-priority--critical mobile-priority-banner--critical';
+    }
+
+    if (this.rowPriorityClass(item) === 'invoice-priority--attention') {
+      return 'detail-priority--attention mobile-priority-banner--attention';
+    }
+
+    return 'detail-priority--stable mobile-priority-banner--stable';
+  }
+
+  priorityLabel(item: InvoiceItem) {
+    if (this.rowPriorityClass(item) === 'invoice-priority--critical') {
+      return 'Prioridad crítica';
+    }
+
+    if (this.rowPriorityClass(item) === 'invoice-priority--attention') {
+      return 'Atención operativa';
+    }
+
+    return 'Seguimiento estable';
+  }
+
+  priorityHeadline(item: InvoiceItem) {
+    if (item.status === 'Vencida') {
+      return 'La factura ya venció y necesita destrabe inmediato.';
+    }
+
+    if (this.getOperationalBlockers(item).length >= 2) {
+      return `Tiene ${this.getOperationalBlockers(item).length} bloqueos activos.`;
+    }
+
+    if (item.status === 'Por_Vencer') {
+      return 'La fecha límite está cerca y requiere seguimiento.';
+    }
+
+    if (this.getOperationalBlockers(item).length === 1) {
+      return `${this.getOperationalBlockers(item)[0].label} está frenando el avance.`;
+    }
+
+    return 'No tiene alertas operativas críticas.';
+  }
+
+  suggestedAction(item: InvoiceItem) {
+    if (!item.refundManagerUserId) {
+      return 'Acción sugerida: asignar un gestor responsable para que el caso tenga dueño claro.';
+    }
+
+    if (!item.purchaseOrder?.trim()) {
+      return 'Acción sugerida: completar la OC para cerrar el faltante documental del proceso.';
+    }
+
+    if (item.guaranteeRefundable && !item.estimatedRefundDate?.trim()) {
+      return 'Acción sugerida: definir la fecha estimada para priorizar bien la gestión.';
+    }
+
+    if (item.status === 'Vencida') {
+      return 'Acción sugerida: revisar la gestión y destrabar el caso cuanto antes.';
+    }
+
+    return 'Acción sugerida: mantener seguimiento normal y revisar la actividad reciente.';
   }
 
   openCreateModal() {
@@ -1154,13 +1367,13 @@ export class InvoicesPageComponent {
     const blockers: InvoiceBlocker[] = [];
 
     if (!item.purchaseOrder?.trim()) {
-      blockers.push({ id: 'missing-po', label: 'Sin OC' });
+      blockers.push({ id: 'missing-po', label: 'Sin OC', icon: 'description', tone: 'warning' });
     }
     if (item.guaranteeRefundable && !item.estimatedRefundDate?.trim()) {
-      blockers.push({ id: 'missing-date', label: 'Sin fecha estimada' });
+      blockers.push({ id: 'missing-date', label: 'Sin fecha estimada', icon: 'event_busy', tone: 'info' });
     }
     if (!item.refundManagerUserId) {
-      blockers.push({ id: 'missing-manager', label: 'Sin gestor asignado' });
+      blockers.push({ id: 'missing-manager', label: 'Sin gestor asignado', icon: 'person_off', tone: 'accent' });
     }
 
     return blockers;

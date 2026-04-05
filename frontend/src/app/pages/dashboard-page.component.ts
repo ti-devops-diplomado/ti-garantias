@@ -16,6 +16,7 @@ interface SummaryCard {
   label: string;
   value: number;
   tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success';
+  icon: string;
 }
 
 interface QuickAction {
@@ -33,6 +34,7 @@ interface FocusCard {
   cta: string;
   tone: 'neutral' | 'info' | 'warning' | 'danger' | 'success';
   value: number;
+  icon: string;
 }
 
 interface ManagerLoadRow {
@@ -55,9 +57,12 @@ interface ManagerLoadRow {
           <p class="page-hero__subtitle">{{ subtitle() }}</p>
         </div>
         <div class="hero-stat-grid" *ngIf="summaryCards().length">
-          <article class="hero-stat" *ngFor="let card of summaryCards()">
+          <article class="hero-stat" *ngFor="let card of summaryCards()" [ngClass]="'hero-stat--' + card.tone">
             <p class="hero-stat__label">{{ card.label }}</p>
-            <p class="hero-stat__value">{{ card.value }}</p>
+            <div class="hero-stat__value-row">
+              <p class="hero-stat__value">{{ card.value }}</p>
+              <mat-icon>{{ card.icon }}</mat-icon>
+            </div>
           </article>
         </div>
       </section>
@@ -81,6 +86,9 @@ interface ManagerLoadRow {
       <ng-container *ngIf="!loading() && !error()">
         <section class="focus-grid" *ngIf="focusCards().length">
           <mat-card class="surface-card focus-card" *ngFor="let item of focusCards()" [ngClass]="'focus-card--' + item.tone">
+            <div class="focus-card__icon">
+              <mat-icon>{{ item.icon }}</mat-icon>
+            </div>
             <p class="focus-card__eyebrow">{{ item.eyebrow }}</p>
             <strong class="focus-card__value">{{ item.value }}</strong>
             <h3>{{ item.title }}</h3>
@@ -124,7 +132,10 @@ interface ManagerLoadRow {
                     <td data-label="Proveedor">{{ item.supplierName }}</td>
                     <td data-label="Vencimiento">{{ item.estimatedRefundDate || 'Pendiente' }}</td>
                     <td data-label="Estado">
-                      <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                      <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(item.status)">
+                        <mat-icon>{{ statusIcon(item.status) }}</mat-icon>
+                        {{ statusLabel(item.status) }}
+                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -197,7 +208,10 @@ interface ManagerLoadRow {
                     <td data-label="Contrato">{{ contractLabel(item) }}</td>
                     <td data-label="Proveedor">{{ item.supplierName }}</td>
                     <td data-label="Estado">
-                      <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                      <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(item.status)">
+                        <mat-icon>{{ statusIcon(item.status) }}</mat-icon>
+                        {{ statusLabel(item.status) }}
+                      </span>
                     </td>
                     <td data-label="Vencimiento">{{ item.estimatedRefundDate || 'Pendiente' }}</td>
                   </tr>
@@ -272,7 +286,10 @@ interface ManagerLoadRow {
                     <td data-label="Proveedor">{{ item.supplierName }}</td>
                     <td data-label="Gestor">{{ item.refundManagerName || 'Sin asignar' }}</td>
                     <td data-label="Estado">
-                      <span class="status-badge" [ngClass]="statusClass(item.status)">{{ item.status }}</span>
+                      <span class="status-badge status-badge--with-icon" [ngClass]="statusClass(item.status)">
+                        <mat-icon>{{ statusIcon(item.status) }}</mat-icon>
+                        {{ statusLabel(item.status) }}
+                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -358,6 +375,8 @@ interface ManagerLoadRow {
     .focus-card {
       display: grid;
       gap: 10px;
+      position: relative;
+      overflow: hidden;
     }
 
     .focus-card__eyebrow,
@@ -365,6 +384,24 @@ interface ManagerLoadRow {
     .focus-card h3,
     .focus-card__detail {
       margin: 0;
+    }
+
+    .focus-card__icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--color-accent-strong);
+      box-shadow: 0 10px 24px rgba(15, 31, 48, 0.08);
+    }
+
+    .focus-card__icon .mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+      line-height: 1;
     }
 
     .focus-card__eyebrow {
@@ -399,6 +436,35 @@ interface ManagerLoadRow {
 
     .focus-card--success {
       background: linear-gradient(180deg, #eef8f3, #e6f4ee);
+    }
+
+    .focus-card--danger::after,
+    .focus-card--warning::after,
+    .focus-card--info::after,
+    .focus-card--success::after {
+      content: '';
+      position: absolute;
+      inset: auto -40px -60px auto;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.34), transparent 68%);
+      pointer-events: none;
+    }
+
+    .hero-stat__value-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .hero-stat__value-row .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      line-height: 1;
+      color: rgba(248, 251, 255, 0.92);
     }
 
     .action-tile {
@@ -518,24 +584,24 @@ export class DashboardPageComponent {
     switch (this.role()) {
       case 'registrar':
         return [
-          { label: 'Mis facturas', value: invoices.length, tone: 'neutral' },
-          { label: 'Por vencer', value: this.countByStatus(invoices, 'Por_Vencer'), tone: 'warning' },
-          { label: 'Vencidas', value: this.countByStatus(invoices, 'Vencida'), tone: 'danger' },
-          { label: 'Con faltantes', value: invoices.filter(item => this.hasMissingInfo(item)).length, tone: 'info' }
+          { label: 'Mis facturas', value: invoices.length, tone: 'neutral', icon: 'receipt_long' },
+          { label: 'Por vencer', value: this.countByStatus(invoices, 'Por_Vencer'), tone: 'warning', icon: 'schedule' },
+          { label: 'Vencidas', value: this.countByStatus(invoices, 'Vencida'), tone: 'danger', icon: 'warning' },
+          { label: 'Con faltantes', value: invoices.filter(item => this.hasMissingInfo(item)).length, tone: 'info', icon: 'rule' }
         ];
       case 'manager':
         return [
-          { label: 'Asignadas', value: invoices.length, tone: 'neutral' },
-          { label: 'Pendientes', value: this.pendingManagedInvoices(invoices).length, tone: 'warning' },
-          { label: 'Sin OC', value: invoices.filter(item => !this.hasValue(item.purchaseOrder)).length, tone: 'info' },
-          { label: 'Sin fecha', value: invoices.filter(item => item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)).length, tone: 'danger' }
+          { label: 'Asignadas', value: invoices.length, tone: 'neutral', icon: 'assignment' },
+          { label: 'Pendientes', value: this.pendingManagedInvoices(invoices).length, tone: 'warning', icon: 'pending_actions' },
+          { label: 'Sin OC', value: invoices.filter(item => !this.hasValue(item.purchaseOrder)).length, tone: 'info', icon: 'description' },
+          { label: 'Sin fecha', value: invoices.filter(item => item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)).length, tone: 'danger', icon: 'event_busy' }
         ];
       case 'admin':
         return [
-          { label: 'Total facturas', value: invoices.length, tone: 'neutral' },
-          { label: 'Por vencer', value: this.countByStatus(invoices, 'Por_Vencer'), tone: 'warning' },
-          { label: 'Vencidas', value: this.countByStatus(invoices, 'Vencida'), tone: 'danger' },
-          { label: 'Gestionadas', value: this.countByStatus(invoices, 'Gestionada'), tone: 'success' }
+          { label: 'Total facturas', value: invoices.length, tone: 'neutral', icon: 'inventory_2' },
+          { label: 'Por vencer', value: this.countByStatus(invoices, 'Por_Vencer'), tone: 'warning', icon: 'schedule' },
+          { label: 'Vencidas', value: this.countByStatus(invoices, 'Vencida'), tone: 'danger', icon: 'warning' },
+          { label: 'Gestionadas', value: this.countByStatus(invoices, 'Gestionada'), tone: 'success', icon: 'task_alt' }
         ];
       default:
         return [];
@@ -580,7 +646,8 @@ export class DashboardPageComponent {
             route: '/mis-registros',
             cta: 'Abrir registros',
             tone: 'warning',
-            value: invoices.filter(item => item.status === 'Por_Vencer').length
+            value: invoices.filter(item => item.status === 'Por_Vencer').length,
+            icon: 'schedule'
           },
           {
             eyebrow: 'Completa datos',
@@ -590,7 +657,8 @@ export class DashboardPageComponent {
             queryParams: { blocker: 'missing-po' },
             cta: 'Completar informacion',
             tone: 'info',
-            value: invoices.filter(item => this.hasMissingInfo(item)).length
+            value: invoices.filter(item => this.hasMissingInfo(item)).length,
+            icon: 'rule'
           },
           {
             eyebrow: 'Seguimiento',
@@ -599,7 +667,8 @@ export class DashboardPageComponent {
             route: '/mis-registros',
             cta: 'Revisar vencidas',
             tone: 'danger',
-            value: invoices.filter(item => item.status === 'Vencida').length
+            value: invoices.filter(item => item.status === 'Vencida').length,
+            icon: 'warning'
           }
         ];
       case 'manager':
@@ -611,7 +680,8 @@ export class DashboardPageComponent {
             route: '/pendientes-gestion',
             cta: 'Abrir pendientes',
             tone: 'warning',
-            value: this.pendingManagedInvoices(invoices).length
+            value: this.pendingManagedInvoices(invoices).length,
+            icon: 'pending_actions'
           },
           {
             eyebrow: 'Bloqueos',
@@ -621,7 +691,8 @@ export class DashboardPageComponent {
             queryParams: { blocker: 'missing-po' },
             cta: 'Completar informacion',
             tone: 'danger',
-            value: invoices.filter(item => !this.hasValue(item.purchaseOrder)).length
+            value: invoices.filter(item => !this.hasValue(item.purchaseOrder)).length,
+            icon: 'description'
           },
           {
             eyebrow: 'Completitud',
@@ -631,7 +702,8 @@ export class DashboardPageComponent {
             queryParams: { blocker: 'missing-date' },
             cta: 'Actualizar fechas',
             tone: 'info',
-            value: invoices.filter(item => item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)).length
+            value: invoices.filter(item => item.guaranteeRefundable && !this.hasValue(item.estimatedRefundDate)).length,
+            icon: 'event_busy'
           }
         ];
       case 'admin':
@@ -643,7 +715,8 @@ export class DashboardPageComponent {
             route: '/facturas',
             cta: 'Ver facturas',
             tone: 'danger',
-            value: invoices.filter(item => item.status === 'Vencida').length
+            value: invoices.filter(item => item.status === 'Vencida').length,
+            icon: 'warning'
           },
           {
             eyebrow: 'Cobertura',
@@ -653,7 +726,8 @@ export class DashboardPageComponent {
             queryParams: { blocker: 'missing-manager', manager: 'unassigned' },
             cta: 'Asignar responsables',
             tone: 'warning',
-            value: invoices.filter(item => !this.hasValue(item.refundManagerName)).length
+            value: invoices.filter(item => !this.hasValue(item.refundManagerName)).length,
+            icon: 'person_off'
           },
           {
             eyebrow: 'Capacidad',
@@ -662,7 +736,8 @@ export class DashboardPageComponent {
             route: '/admin/usuarios',
             cta: 'Revisar carga',
             tone: 'info',
-            value: this.managerLoad().filter(item => item.pending >= 5).length
+            value: this.managerLoad().filter(item => item.pending >= 5).length,
+            icon: 'stacked_bar_chart'
           }
         ];
       default:
@@ -789,6 +864,39 @@ export class DashboardPageComponent {
       missing.push('gestor asignado');
     }
     return missing.join(', ');
+  }
+
+  statusLabel(status: string) {
+    switch (status) {
+      case 'Por_Vencer':
+        return 'Por vencer';
+      case 'Vencida':
+        return 'Vencida';
+      case 'Gestionada':
+        return 'Gestionada';
+      case 'Registrada':
+        return 'Registrada';
+      case 'En_Gestion':
+        return 'En gestión';
+      default:
+        return status;
+    }
+  }
+
+  statusIcon(status: string) {
+    switch (status) {
+      case 'Por_Vencer':
+        return 'schedule';
+      case 'Vencida':
+        return 'warning';
+      case 'Gestionada':
+        return 'task_alt';
+      case 'Registrada':
+      case 'En_Gestion':
+        return 'receipt_long';
+      default:
+        return 'info';
+    }
   }
 
   statusClass(status: string) {
