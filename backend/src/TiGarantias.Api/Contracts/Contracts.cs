@@ -151,3 +151,13 @@ public sealed class InvoiceResponse
     public IReadOnlyCollection<Guid> DeliverableIds { get; set; } = Array.Empty<Guid>();
     public IReadOnlyCollection<AttachmentResponse> Attachments { get; set; } = Array.Empty<AttachmentResponse>();
 }
+
+public sealed class InvoiceTimelineEventResponse
+{
+    public Guid Id { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string ActorName { get; set; } = string.Empty;
+    public DateTime OccurredAt { get; set; }
+}

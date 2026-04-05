@@ -23,7 +23,7 @@ import { FeedbackService } from '../core/feedback.service';
           <p class="login-story__eyebrow">Portal interno</p>
           <h1>Seguimiento claro para devoluciones de garantias.</h1>
           <p class="login-story__copy">
-            Centraliza facturas, vencimientos, soportes y asignaciones desde una sola experiencia de trabajo.
+            Centraliza facturas, vencimientos, bloqueos operativos y asignaciones desde una sola experiencia de trabajo.
           </p>
 
           <div class="login-highlights">
@@ -37,8 +37,8 @@ import { FeedbackService } from '../core/feedback.service';
             <article>
               <mat-icon>folder_managed</mat-icon>
               <div>
-                <strong>Datos y soportes</strong>
-                <p>Facturas, contratos y adjuntos en un flujo mas legible.</p>
+                <strong>Datos operativos</strong>
+                <p>Facturas, contratos y responsables en un flujo mas legible.</p>
               </div>
             </article>
             <article>

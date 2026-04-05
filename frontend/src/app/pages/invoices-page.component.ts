@@ -13,7 +13,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { FeedbackService } from '../core/feedback.service';
-import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from '../core/models';
+import { ContractItem, Deliverable, InvoiceItem, InvoiceTimelineEvent, Supplier, UserSummary } from '../core/models';
+
+type InvoiceBlockerId = 'missing-po' | 'missing-date' | 'missing-manager';
+
+interface InvoiceBlocker {
+  id: InvoiceBlockerId;
+  label: string;
+}
 
 @Component({
   selector: 'app-invoices-page',
@@ -74,6 +81,13 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
               <mat-option *ngFor="let item of managerUsers()" [value]="item.id">{{ item.fullName }}</mat-option>
             </mat-select>
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Bloqueo</mat-label>
+            <mat-select [value]="blockerFilter()" (selectionChange)="blockerFilter.set($event.value || '')">
+              <mat-option value="">Todos</mat-option>
+              <mat-option *ngFor="let blocker of availableBlockers()" [value]="blocker.id">{{ blocker.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
 
         <div class="list-toolbar">
@@ -103,7 +117,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
                   <th>Retenido</th>
                   <th>Estado</th>
                   <th>Gestor</th>
-                  <th>Adjuntos</th>
+                  <th>Bloqueos</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -124,7 +138,8 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
                   </td>
                   <td>{{ item.refundManagerName || 'Sin asignar' }}</td>
                   <td>
-                    <span class="info-badge">{{ item.attachments.length }} adj.</span>
+                    <span class="info-badge" *ngFor="let blocker of blockerTokens(item)">{{ blocker }}</span>
+                    <span class="info-badge" *ngIf="!blockerTokens(item).length">Sin bloqueos</span>
                   </td>
                   <td class="actions">
                     <button mat-stroked-button type="button" *ngIf="canAssignManagers && !item.refundManagerUserId" (click)="startAssignManager(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
@@ -136,10 +151,6 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
                     <button mat-stroked-button type="button" *ngIf="canManageInvoices && !isManaged(item)" (click)="manage(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
                       {{ isInvoiceBusy(item.id) ? 'Procesando...' : 'Marcar gestión' }}
                     </button>
-                    <label class="upload-action" [class.upload-action--disabled]="isInvoiceBusy(item.id) || savingForm()">
-                      <span>{{ isInvoiceBusy(item.id) ? 'Subiendo...' : 'Adjuntar' }}</span>
-                      <input type="file" (change)="upload(item.id, $event)" />
-                    </label>
                   </td>
                 </tr>
               </tbody>
@@ -154,8 +165,8 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
 
             <div class="pill-row">
               <span class="status-badge" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span>
-              <span class="info-badge" *ngFor="let token of missingInfoTokens(selected)">{{ token }}</span>
-              <span class="info-badge" *ngIf="!missingInfoTokens(selected).length">Sin faltantes criticos</span>
+              <span class="info-badge" *ngFor="let token of blockerTokens(selected)">{{ token }}</span>
+              <span class="info-badge" *ngIf="!blockerTokens(selected).length">Sin bloqueos operativos</span>
             </div>
 
             <div class="detail-panel__facts">
@@ -164,7 +175,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
               <p><strong>OC:</strong> {{ selected.purchaseOrder || 'Sin OC' }}</p>
               <p><strong>Retenido:</strong> {{ selected.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
               <p><strong>Gestor:</strong> {{ selected.refundManagerName || 'Sin asignar' }}</p>
-              <p><strong>Adjuntos:</strong> {{ selected.attachments.length }}</p>
+              <p><strong>Bloqueos:</strong> {{ blockerTokens(selected).length || 'Sin bloqueos' }}</p>
             </div>
 
             <div class="detail-panel__actions" *ngIf="scope !== 'mine'">
@@ -179,17 +190,22 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
               </button>
             </div>
 
-            <div class="attachments" *ngIf="selected.attachments.length; else noSelectedAttachments">
-              <strong>Adjuntos</strong>
-              <button *ngFor="let attachment of selected.attachments"
-                      type="button"
-                      class="attachment-link"
-                      (click)="previewAttachment(attachment.id, attachment.originalFileName)">
-                {{ attachment.originalFileName }}
-              </button>
+            <div class="timeline-card">
+              <strong>Actividad reciente</strong>
+              <p class="timeline-card__hint" *ngIf="timelineLoading()">Cargando actividad...</p>
+              <p class="timeline-card__hint" *ngIf="timelineError()">{{ timelineError() }}</p>
+              <div class="timeline-list" *ngIf="!timelineLoading() && !timelineError() && selectedTimeline().length; else noSelectedTimeline">
+                <article class="timeline-item" *ngFor="let event of selectedTimeline()">
+                  <div>
+                    <p class="timeline-item__title">{{ event.label }}</p>
+                    <p class="timeline-item__meta">{{ event.actorName }} · {{ event.occurredAt | date:'short' }}</p>
+                  </div>
+                  <p class="timeline-item__detail">{{ event.detail }}</p>
+                </article>
+              </div>
             </div>
-            <ng-template #noSelectedAttachments>
-              <small>Sin adjuntos todavia</small>
+            <ng-template #noSelectedTimeline>
+              <small>La factura todavia no tiene actividad registrada para mostrar.</small>
             </ng-template>
           </aside>
 
@@ -218,20 +234,8 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
               <p><strong>OC:</strong> {{ item.purchaseOrder || 'Sin OC' }}</p>
               <p><strong>Retenido:</strong> {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
               <p><strong>Gestor:</strong> {{ item.refundManagerName || 'Sin asignar' }}</p>
-              <p><strong>Adjuntos:</strong> {{ item.attachments.length }}</p>
+              <p><strong>Bloqueos:</strong> {{ blockerTokens(item).length || 'Sin bloqueos' }}</p>
             </div>
-            <div class="attachments" *ngIf="item.attachments.length; else noManagedAttachments">
-              <strong>Adjuntos</strong>
-              <button *ngFor="let attachment of item.attachments"
-                      type="button"
-                      class="attachment-link"
-                      (click)="previewAttachment(attachment.id, attachment.originalFileName)">
-                {{ attachment.originalFileName }}
-              </button>
-            </div>
-            <ng-template #noManagedAttachments>
-              <small>Sin adjuntos</small>
-            </ng-template>
             <div class="actions mobile-actions">
               <button mat-stroked-button type="button" *ngIf="canAssignManagers" (click)="startAssignManager(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
                 {{ item.refundManagerUserId ? 'Reasignar gestor' : 'Asignar gestor' }}
@@ -242,10 +246,6 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
               <button mat-stroked-button type="button" *ngIf="canManageInvoices && !isManaged(item)" (click)="manage(item)" [disabled]="isInvoiceBusy(item.id) || savingForm()">
                 {{ isInvoiceBusy(item.id) ? 'Procesando...' : 'Marcar gestión' }}
               </button>
-              <label class="upload-action" [class.upload-action--disabled]="isInvoiceBusy(item.id) || savingForm()">
-                <span>{{ isInvoiceBusy(item.id) ? 'Subiendo...' : 'Adjuntar' }}</span>
-                <input type="file" (change)="upload(item.id, $event)" />
-              </label>
             </div>
 
             <div class="mobile-detail-toggle">
@@ -256,11 +256,28 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
 
             <section class="mobile-detail-panel" *ngIf="selectedInvoiceId() === item.id">
               <div class="pill-row">
-                <span class="info-badge" *ngFor="let token of missingInfoTokens(item)">{{ token }}</span>
-                <span class="info-badge" *ngIf="!missingInfoTokens(item).length">Sin faltantes criticos</span>
+                <span class="info-badge" *ngFor="let token of blockerTokens(item)">{{ token }}</span>
+                <span class="info-badge" *ngIf="!blockerTokens(item).length">Sin bloqueos operativos</span>
               </div>
               <p><strong>Creada por:</strong> {{ item.createdByUserName }}</p>
               <p><strong>Valor factura:</strong> {{ item.invoiceAmount | currency:'USD':'symbol':'1.0-0' }}</p>
+              <div class="timeline-card">
+                <strong>Actividad reciente</strong>
+                <p class="timeline-card__hint" *ngIf="timelineLoading()">Cargando actividad...</p>
+                <p class="timeline-card__hint" *ngIf="timelineError()">{{ timelineError() }}</p>
+                <div class="timeline-list" *ngIf="!timelineLoading() && !timelineError() && selectedTimeline().length; else noMobileTimeline">
+                  <article class="timeline-item" *ngFor="let event of selectedTimeline()">
+                    <div>
+                      <p class="timeline-item__title">{{ event.label }}</p>
+                      <p class="timeline-item__meta">{{ event.actorName }} · {{ event.occurredAt | date:'short' }}</p>
+                    </div>
+                    <p class="timeline-item__detail">{{ event.detail }}</p>
+                  </article>
+                </div>
+                <ng-template #noMobileTimeline>
+                  <small>La factura todavia no tiene actividad registrada para mostrar.</small>
+                </ng-template>
+              </div>
             </section>
           </article>
         </div>
@@ -391,18 +408,34 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
             <p>Inicio: {{ item.invoiceDate }} · Vencimiento: {{ item.estimatedRefundDate || 'Pendiente' }}</p>
             <p>OC: {{ item.purchaseOrder || 'Sin OC' }} · Retenido: {{ item.retainedAmount | currency:'USD':'symbol':'1.0-0' }}</p>
             <p>Gestor: {{ item.refundManagerName || 'Sin asignar' }}</p>
-            <div class="attachments" *ngIf="item.attachments.length; else noAttachments">
-              <strong>Adjuntos</strong>
-              <button *ngFor="let attachment of item.attachments"
-                      type="button"
-                      class="attachment-link"
-                      (click)="previewAttachment(attachment.id, attachment.originalFileName)">
-                {{ attachment.originalFileName }}
+            <div class="pill-row">
+              <span class="info-badge" *ngFor="let token of blockerTokens(item)">{{ token }}</span>
+              <span class="info-badge" *ngIf="!blockerTokens(item).length">Sin bloqueos operativos</span>
+            </div>
+            <div class="mobile-detail-toggle">
+              <button mat-button type="button" (click)="toggleInvoiceSelection(item.id)">
+                {{ selectedInvoiceId() === item.id ? 'Ocultar actividad' : 'Ver actividad' }}
               </button>
             </div>
-            <ng-template #noAttachments>
-              <small>Sin adjuntos</small>
-            </ng-template>
+            <section class="mobile-detail-panel" *ngIf="selectedInvoiceId() === item.id">
+              <div class="timeline-card">
+                <strong>Actividad reciente</strong>
+                <p class="timeline-card__hint" *ngIf="timelineLoading()">Cargando actividad...</p>
+                <p class="timeline-card__hint" *ngIf="timelineError()">{{ timelineError() }}</p>
+                <div class="timeline-list" *ngIf="!timelineLoading() && !timelineError() && selectedTimeline().length; else noMineTimeline">
+                  <article class="timeline-item" *ngFor="let event of selectedTimeline()">
+                    <div>
+                      <p class="timeline-item__title">{{ event.label }}</p>
+                      <p class="timeline-item__meta">{{ event.actorName }} · {{ event.occurredAt | date:'short' }}</p>
+                    </div>
+                    <p class="timeline-item__detail">{{ event.detail }}</p>
+                  </article>
+                </div>
+                <ng-template #noMineTimeline>
+                  <small>La factura todavia no tiene actividad registrada para mostrar.</small>
+                </ng-template>
+              </div>
+            </section>
           </article>
           <p class="empty" *ngIf="!invoices().length">No hay registros para mostrar.</p>
         </div>
@@ -573,12 +606,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
       gap: 12px;
       margin-bottom: 10px;
     }
-    .upload-action--disabled {
-      opacity: 0.72;
-      pointer-events: none;
-    }
     .detail-grid { display: grid; gap: 8px; margin: 14px 0; color: var(--color-ink-soft); }
-    .attachments { display: grid; gap: 8px; margin-top: 14px; }
     .mobile-detail-toggle {
       margin-top: 10px;
     }
@@ -588,6 +616,44 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
       margin-top: 12px;
       padding-top: 14px;
       border-top: 1px solid rgba(23, 50, 77, 0.08);
+      color: var(--color-ink-soft);
+    }
+    .timeline-card {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(23, 50, 77, 0.08);
+    }
+    .timeline-card strong,
+    .timeline-card small,
+    .timeline-item__title,
+    .timeline-item__meta,
+    .timeline-item__detail {
+      margin: 0;
+    }
+    .timeline-card__hint {
+      margin: 0;
+      color: var(--color-ink-soft);
+    }
+    .timeline-list {
+      display: grid;
+      gap: 12px;
+    }
+    .timeline-item {
+      display: grid;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(245, 248, 252, 0.82);
+      border: 1px solid rgba(23, 50, 77, 0.08);
+    }
+    .timeline-item__title {
+      font-weight: 800;
+      color: var(--color-accent-strong);
+    }
+    .timeline-item__meta,
+    .timeline-item__detail {
       color: var(--color-ink-soft);
     }
     .mobile-only { display: none; }
@@ -643,8 +709,7 @@ import { AttachmentItem, ContractItem, Deliverable, InvoiceItem, Supplier, UserS
         display: grid;
         grid-template-columns: 1fr;
       }
-      .actions button,
-      .upload-action {
+      .actions button {
         width: 100%;
         justify-content: center;
       }
@@ -699,22 +764,26 @@ export class InvoicesPageComponent {
   readonly discardDraftPrompt = signal(false);
   readonly savingForm = signal(false);
   readonly busyInvoiceIds = signal<string[]>([]);
+  readonly timeline = signal<InvoiceTimelineEvent[]>([]);
+  readonly timelineLoading = signal(false);
+  readonly timelineError = signal<string | null>(null);
   readonly searchTerm = signal('');
   readonly supplierFilter = signal('');
   readonly statusFilter = signal('');
   readonly managerFilter = signal(this.route.snapshot.queryParamMap.get('manager') ?? '');
+  readonly blockerFilter = signal(this.route.snapshot.queryParamMap.get('blocker') ?? '');
   readonly scope = this.route.snapshot.data['scope'] as string ?? 'all';
   readonly title = this.scope === 'mine' ? 'Mis registros' : this.scope === 'managed' ? 'Pendientes por gestionar' : 'Facturas';
   readonly pageEyebrow = this.scope === 'mine' ? 'Seguimiento personal' : this.scope === 'managed' ? 'Gestion operativa' : 'Control documental';
   readonly pageSubtitle = this.scope === 'mine'
-    ? 'Revisa tus facturas registradas, fechas clave y soportes desde un espacio mas claro.'
+    ? 'Revisa tus facturas registradas, fechas clave y actividad reciente desde un espacio mas claro.'
     : this.scope === 'managed'
-      ? 'Completa informacion pendiente, adjunta soportes y avanza la gestion sin salir del listado.'
+      ? 'Completa informacion pendiente y avanza la gestion sin salir del listado.'
       : 'Consulta el universo de facturas, filtra rapido y registra nuevos casos con mejor contexto.';
   readonly tableDescription = this.scope === 'managed'
     ? 'Completa y gestiona las facturas asignadas desde la misma vista, con el mismo formato operativo del listado general de facturas.'
     : this.scope === 'mine'
-      ? 'Consulta tus facturas registradas y los soportes asociados.'
+      ? 'Consulta tus facturas registradas y detecta bloqueos operativos sin salir del flujo.'
       : 'Explora el listado completo, filtra por proveedor o estado y actua sobre cada factura.';
   readonly canCreateInvoices = this.scope === 'all' && this.auth.hasAnyRole(['Registrador', 'Admin']);
   readonly canManageInvoices = this.auth.hasAnyRole(['Gestor', 'Admin']);
@@ -725,6 +794,11 @@ export class InvoicesPageComponent {
       .filter(item => item.isActive && item.roles.includes('Gestor'))
       .sort((left, right) => left.fullName.localeCompare(right.fullName))
   );
+  readonly availableBlockers = computed<InvoiceBlocker[]>(() => [
+    { id: 'missing-po', label: 'Sin OC' },
+    { id: 'missing-date', label: 'Sin fecha estimada' },
+    { id: 'missing-manager', label: 'Sin gestor asignado' }
+  ]);
   readonly availableStatuses = computed(() => Array.from(new Set(this.invoices().map(item => item.status))).sort());
   readonly selectedInvoice = computed(() => {
     const selectedId = this.selectedInvoiceId();
@@ -734,8 +808,9 @@ export class InvoicesPageComponent {
 
     return this.filteredInvoices().find(item => item.id === selectedId) ?? null;
   });
+  readonly selectedTimeline = computed(() => this.timeline());
   readonly hasActiveFilters = computed(() =>
-    !!this.searchTerm().trim() || !!this.supplierFilter() || !!this.statusFilter() || !!this.managerFilter()
+    !!this.searchTerm().trim() || !!this.supplierFilter() || !!this.statusFilter() || !!this.managerFilter() || !!this.blockerFilter()
   );
   readonly emptyListTitle = computed(() => this.hasActiveFilters() ? 'No encontramos coincidencias' : 'Todavia no hay facturas');
   readonly emptyListMessage = computed(() => {
@@ -759,7 +834,7 @@ export class InvoicesPageComponent {
 
     return [
       { label: this.scope === 'mine' ? 'Mis facturas' : 'Visibles', value: data.length, tone: 'neutral' },
-      { label: 'Con faltantes', value: data.filter(item => this.hasMissingInfo(item)).length, tone: 'info' },
+      { label: 'Con bloqueos', value: data.filter(item => this.hasOperationalBlockers(item)).length, tone: 'info' },
       { label: 'Por vencer', value: data.filter(item => item.status === 'Por_Vencer').length, tone: 'warning' },
       { label: 'Gestionadas', value: data.filter(item => this.isManaged(item)).length, tone: 'success' }
     ];
@@ -769,6 +844,7 @@ export class InvoicesPageComponent {
     const supplierId = this.supplierFilter();
     const status = this.statusFilter();
     const manager = this.managerFilter();
+    const blocker = this.blockerFilter();
 
     return this.invoices().filter(item => {
       const matchesSearch = !search || [
@@ -784,7 +860,8 @@ export class InvoicesPageComponent {
       const matchesManager = !manager
         || (manager === 'unassigned' && !item.refundManagerUserId)
         || item.refundManagerUserId === manager;
-      return matchesSearch && matchesSupplier && matchesStatus && matchesManager;
+      const matchesBlocker = !blocker || this.hasBlocker(item, blocker as InvoiceBlockerId);
+      return matchesSearch && matchesSupplier && matchesStatus && matchesManager && matchesBlocker;
     });
   });
 
@@ -847,23 +924,15 @@ export class InvoicesPageComponent {
     }
   }
 
-  missingInfoTokens(item: InvoiceItem) {
-    const tokens: string[] = [];
-    if (!item.purchaseOrder?.trim()) {
-      tokens.push('Sin OC');
-    }
-    if (!item.estimatedRefundDate?.trim()) {
-      tokens.push('Sin fecha');
-    }
-    if (!item.attachments.length) {
-      tokens.push('Sin adjuntos');
-    }
-    return tokens;
+  blockerTokens(item: InvoiceItem) {
+    return this.getOperationalBlockers(item).map(blocker => blocker.label);
   }
 
   openCreateModal() {
     this.editingInvoiceId.set(null);
     this.selectedInvoiceId.set(null);
+    this.timeline.set([]);
+    this.timelineError.set(null);
     this.discardDraftPrompt.set(false);
     this.resetFormForCreate();
     this.showFormModal.set(true);
@@ -872,6 +941,7 @@ export class InvoicesPageComponent {
   startEdit(item: InvoiceItem) {
     this.editingInvoiceId.set(item.id);
     this.selectedInvoiceId.set(item.id);
+    this.loadTimeline(item.id);
     this.discardDraftPrompt.set(false);
     this.form.reset({
       supplierId: item.supplierId,
@@ -928,15 +998,27 @@ export class InvoicesPageComponent {
     this.supplierFilter.set('');
     this.statusFilter.set('');
     this.managerFilter.set('');
+    this.blockerFilter.set('');
     this.selectedInvoiceId.set(null);
+    this.timeline.set([]);
+    this.timelineError.set(null);
   }
 
   selectInvoice(id: string) {
     this.selectedInvoiceId.set(id);
+    this.loadTimeline(id);
   }
 
   toggleInvoiceSelection(id: string) {
-    this.selectedInvoiceId.update(current => current === id ? null : id);
+    if (this.selectedInvoiceId() === id) {
+      this.selectedInvoiceId.set(null);
+      this.timeline.set([]);
+      this.timelineError.set(null);
+      return;
+    }
+
+    this.selectedInvoiceId.set(id);
+    this.loadTimeline(id);
   }
 
   saveInvoice() {
@@ -970,7 +1052,7 @@ export class InvoicesPageComponent {
       next: () => {
         this.feedback.success(editingInvoiceId ? 'Factura actualizada.' : 'Factura creada.');
         this.cancelEdit();
-        this.reload();
+        this.reload(editingInvoiceId ?? undefined);
       },
       error: () => this.feedback.error('No fue posible guardar la factura.'),
       complete: () => this.savingForm.set(false)
@@ -991,41 +1073,6 @@ export class InvoicesPageComponent {
       },
       error: () => this.feedback.error('No fue posible marcar la factura como gestionada.'),
       complete: () => this.setInvoiceBusy(item.id, false)
-    });
-  }
-
-  upload(id: string, event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-    this.setInvoiceBusy(id, true);
-    this.api.uploadAttachment(id, file).subscribe({
-      next: () => {
-        this.feedback.success(`Adjunto ${file.name} cargado correctamente.`);
-        this.reload();
-      },
-      error: () => this.feedback.error(`No fue posible adjuntar ${file.name}.`),
-      complete: () => {
-        this.setInvoiceBusy(id, false);
-        input.value = '';
-      }
-    });
-  }
-
-  previewAttachment(attachmentId: string, fileName: string) {
-    this.api.getAttachmentPreview(attachmentId).subscribe(({ blob, contentType }) => {
-      const previewBlob = blob.type ? blob : new Blob([blob], { type: contentType });
-      const url = URL.createObjectURL(previewBlob);
-      const previewWindow = window.open(url, '_blank', 'noopener,noreferrer');
-
-      if (!previewWindow) {
-        URL.revokeObjectURL(url);
-        return;
-      }
-
-      previewWindow.document.title = fileName;
-      previewWindow.addEventListener('beforeunload', () => URL.revokeObjectURL(url), { once: true });
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
     });
   }
 
@@ -1055,11 +1102,19 @@ export class InvoicesPageComponent {
         this.invoices.set(data);
         if (this.selectedInvoiceId() && !data.some(item => item.id === this.selectedInvoiceId())) {
           this.selectedInvoiceId.set(null);
+          this.timeline.set([]);
+          this.timelineError.set(null);
         }
 
         if (!data.length) {
           this.cancelEdit();
           return;
+        }
+
+        const targetId = preferredInvoiceId ?? this.selectedInvoiceId();
+        if (targetId && data.some(item => item.id === targetId)) {
+          this.selectedInvoiceId.set(targetId);
+          this.loadTimeline(targetId);
         }
       },
       error: () => this.feedback.error('No fue posible cargar las facturas.')
@@ -1074,10 +1129,41 @@ export class InvoicesPageComponent {
     return this.busyInvoiceIds().includes(id);
   }
 
-  private hasMissingInfo(item: InvoiceItem) {
-    return !item.purchaseOrder?.trim()
-      || !item.estimatedRefundDate?.trim()
-      || !item.attachments.length;
+  private loadTimeline(invoiceId: string) {
+    this.timelineLoading.set(true);
+    this.timelineError.set(null);
+    this.api.getInvoiceTimeline(invoiceId).subscribe({
+      next: data => this.timeline.set(data),
+      error: () => {
+        this.timeline.set([]);
+        this.timelineError.set('No fue posible cargar la actividad reciente.');
+      },
+      complete: () => this.timelineLoading.set(false)
+    });
+  }
+
+  private hasOperationalBlockers(item: InvoiceItem) {
+    return this.getOperationalBlockers(item).length > 0;
+  }
+
+  private hasBlocker(item: InvoiceItem, blockerId: InvoiceBlockerId) {
+    return this.getOperationalBlockers(item).some(blocker => blocker.id === blockerId);
+  }
+
+  private getOperationalBlockers(item: InvoiceItem): InvoiceBlocker[] {
+    const blockers: InvoiceBlocker[] = [];
+
+    if (!item.purchaseOrder?.trim()) {
+      blockers.push({ id: 'missing-po', label: 'Sin OC' });
+    }
+    if (item.guaranteeRefundable && !item.estimatedRefundDate?.trim()) {
+      blockers.push({ id: 'missing-date', label: 'Sin fecha estimada' });
+    }
+    if (!item.refundManagerUserId) {
+      blockers.push({ id: 'missing-manager', label: 'Sin gestor asignado' });
+    }
+
+    return blockers;
   }
 
   private setInvoiceBusy(id: string, busy: boolean) {

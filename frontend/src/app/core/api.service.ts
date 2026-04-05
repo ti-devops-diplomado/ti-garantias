@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs';
-import { ContractItem, Deliverable, InvoiceItem, Supplier, UserSummary } from './models';
+import { ContractItem, Deliverable, InvoiceItem, InvoiceTimelineEvent, Supplier, UserSummary } from './models';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -62,6 +62,10 @@ export class ApiService {
   getInvoices(scope: string) {
     const query = scope === 'all' ? '' : `?scope=${scope}`;
     return this.http.get<InvoiceItem[]>(`${this.auth.apiBaseUrl}/api/invoices${query}`);
+  }
+
+  getInvoiceTimeline(id: string) {
+    return this.http.get<InvoiceTimelineEvent[]>(`${this.auth.apiBaseUrl}/api/invoices/${id}/timeline`);
   }
 
   saveInvoice(payload: unknown, id?: string) {

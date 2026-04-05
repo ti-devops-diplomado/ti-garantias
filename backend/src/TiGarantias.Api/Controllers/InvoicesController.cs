@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using TiGarantias.Api.Contracts;
 using TiGarantias.Api.Data;
 using TiGarantias.Api.Domain.Enums;
@@ -53,6 +54,22 @@ public sealed class InvoicesController(
 
         var invoices = await query.OrderByDescending(x => x.CreatedAt).ToListAsync(cancellationToken);
         return Ok(invoices.Select(MapInvoice).ToArray());
+    }
+
+    [HttpGet("{id:guid}/timeline")]
+    public async Task<ActionResult<IReadOnlyCollection<InvoiceTimelineEventResponse>>> GetTimeline(Guid id, CancellationToken cancellationToken)
+    {
+        var invoice = await dbContext.Invoices.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (invoice is null) return NotFound();
+        if (!CanAccessInvoice(invoice)) return Forbid();
+
+        var timeline = await dbContext.AuditEvents
+            .Include(x => x.User)
+            .Where(x => x.EntityType == "invoice" && x.EntityId == id.ToString())
+            .OrderByDescending(x => x.OccurredAt)
+            .ToListAsync(cancellationToken);
+
+        return Ok(timeline.Select(MapTimelineEvent).ToArray());
     }
 
     [HttpPost]
@@ -278,6 +295,53 @@ public sealed class InvoicesController(
         return currentUserService.Roles.Contains("Admin")
             || invoice.CreatedByUserId == currentUserService.UserId.Value
             || (currentUserService.Roles.Contains("Gestor") && invoice.RefundManagerUserId == currentUserService.UserId.Value);
+    }
+
+    private static InvoiceTimelineEventResponse MapTimelineEvent(AuditEvent auditEvent)
+    {
+        var (label, detail) = auditEvent.Action switch
+        {
+            "create" => ("Factura registrada", TryReadInvoiceNumber(auditEvent.PayloadJson, "Factura creada en el sistema.")),
+            "update" => ("Factura actualizada", "Se modificaron datos operativos de la factura."),
+            "manage_refund" => ("Gestion completada", "La factura fue marcada como gestionada."),
+            _ => ("Actividad registrada", "Se registró una actualización en la factura.")
+        };
+
+        return new InvoiceTimelineEventResponse
+        {
+            Id = auditEvent.Id,
+            Action = auditEvent.Action,
+            Label = label,
+            Detail = detail,
+            ActorName = string.IsNullOrWhiteSpace(auditEvent.User?.FullName) ? "Sistema" : auditEvent.User.FullName,
+            OccurredAt = auditEvent.OccurredAt
+        };
+    }
+
+    private static string TryReadInvoiceNumber(string payloadJson, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(payloadJson))
+        {
+            return fallback;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(payloadJson);
+            if (document.RootElement.TryGetProperty("invoiceNumber", out var invoiceNumberElement))
+            {
+                var invoiceNumber = invoiceNumberElement.GetString();
+                if (!string.IsNullOrWhiteSpace(invoiceNumber))
+                {
+                    return $"Factura {invoiceNumber}.";
+                }
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return fallback;
     }
 
     private static InvoiceResponse MapInvoice(Invoice invoice) => new()

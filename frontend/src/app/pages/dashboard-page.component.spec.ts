@@ -71,7 +71,7 @@ describe('DashboardPageComponent', () => {
 
     expect(coverageCard).toEqual(jasmine.objectContaining({
       route: '/facturas',
-      queryParams: { manager: 'unassigned' },
+      queryParams: { blocker: 'missing-manager', manager: 'unassigned' },
       value: 1
     }));
   });
