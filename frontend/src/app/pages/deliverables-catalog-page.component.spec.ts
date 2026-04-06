@@ -28,7 +28,8 @@ describe('DeliverablesCatalogPageComponent', () => {
   const apiMock = {
     getContracts: jasmine.createSpy('getContracts').and.returnValue(of(contracts)),
     getDeliverables: jasmine.createSpy('getDeliverables').and.returnValue(of(deliverables)),
-    createDeliverable: jasmine.createSpy('createDeliverable').and.returnValue(of(deliverables[0]))
+    createDeliverable: jasmine.createSpy('createDeliverable').and.returnValue(of(deliverables[0])),
+    updateDeliverable: jasmine.createSpy('updateDeliverable').and.returnValue(of(deliverables[0]))
   };
 
   beforeEach(async () => {
@@ -57,5 +58,30 @@ describe('DeliverablesCatalogPageComponent', () => {
     component.searchTerm.set('contrato uno');
 
     expect(component.filteredDeliverables().map(item => item.id)).toEqual(['d1']);
+  });
+
+  it('loads a deliverable into the form when editing', () => {
+    component.editDeliverable(deliverables[0]);
+
+    expect(component.editingDeliverableId()).toBe('d1');
+    expect(component.form.getRawValue()).toEqual({
+      contractId: 'c1',
+      name: 'Entregable Uno',
+      description: 'Descripcion'
+    });
+    expect(component.showModal()).toBeTrue();
+  });
+
+  it('uses updateDeliverable when saving an existing deliverable', () => {
+    component.editDeliverable(deliverables[0]);
+    component.form.patchValue({ name: 'Entregable Actualizado' });
+
+    component.saveDeliverable();
+
+    expect(apiMock.updateDeliverable).toHaveBeenCalledWith('d1', {
+      contractId: 'c1',
+      name: 'Entregable Actualizado',
+      description: 'Descripcion'
+    });
   });
 });

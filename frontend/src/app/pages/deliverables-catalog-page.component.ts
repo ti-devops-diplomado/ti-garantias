@@ -71,6 +71,7 @@ import { ContractItem, Deliverable } from '../core/models';
               <th>Entregable</th>
               <th>Contrato</th>
               <th>Descripción</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -78,6 +79,9 @@ import { ContractItem, Deliverable } from '../core/models';
               <td>{{ item.name }}</td>
               <td>{{ getContractLabel(item.contractId) }}</td>
               <td>{{ item.description || 'Sin descripción' }}</td>
+              <td class="actions">
+                <button mat-stroked-button type="button" (click)="editDeliverable(item)">Editar</button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -88,6 +92,9 @@ import { ContractItem, Deliverable } from '../core/models';
           <h3>{{ item.name }}</h3>
           <p><strong>Contrato:</strong> {{ getContractLabel(item.contractId) }}</p>
           <p><strong>Descripción:</strong> {{ item.description || 'Sin descripción' }}</p>
+          <div class="actions mobile-actions">
+            <button mat-stroked-button type="button" (click)="editDeliverable(item)">Editar</button>
+          </div>
         </article>
       </div>
     </mat-card>
@@ -96,7 +103,7 @@ import { ContractItem, Deliverable } from '../core/models';
       <mat-card class="surface-card modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
-            <h2>Nuevo entregable</h2>
+            <h2>{{ editingDeliverableId() ? 'Editar entregable' : 'Nuevo entregable' }}</h2>
             <p>Asocia el entregable al contrato correcto desde una ventana más amplia.</p>
           </div>
           <button mat-icon-button class="icon-button icon-button--ghost icon-button--danger" type="button" (click)="requestCloseModal()" aria-label="Cerrar formulario">
@@ -120,7 +127,7 @@ import { ContractItem, Deliverable } from '../core/models';
           </mat-form-field>
           <div class="form-actions">
             <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
-              {{ saving() ? 'Guardando...' : 'Guardar entregable' }}
+              {{ saving() ? 'Guardando...' : (editingDeliverableId() ? 'Actualizar entregable' : 'Guardar entregable') }}
             </button>
             <button mat-stroked-button type="button" (click)="requestCloseModal()" [disabled]="saving()">Cancelar</button>
           </div>
@@ -179,6 +186,7 @@ import { ContractItem, Deliverable } from '../core/models';
       color: var(--color-ink-muted);
       background: rgba(245, 239, 230, 0.66);
     }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .cards { display: grid; gap: 12px; }
     .item-card { padding: 18px; border: 1px solid var(--color-border); border-radius: 22px; background: rgba(255, 255, 255, 0.88); box-shadow: var(--shadow-soft); }
     .item-card h3, .item-card p { margin: 0 0 8px; }
@@ -204,12 +212,13 @@ import { ContractItem, Deliverable } from '../core/models';
       padding-top: 4px;
     }
     @media (max-width: 960px) {
-      .section-header, .modal-header, .filters, form, .form-actions, .list-toolbar, .empty-panel, .draft-warning {
+      .section-header, .modal-header, .filters, form, .form-actions, .mobile-actions, .list-toolbar, .empty-panel, .draft-warning {
         display: grid;
         grid-template-columns: 1fr;
       }
       .desktop-only { display: none; }
       .mobile-only { display: grid; }
+      .actions button { width: 100%; }
       .filters { grid-template-columns: 1fr; }
       .modal-shell { padding: 12px; align-items: end; }
       .modal-card { width: 100%; max-height: min(90vh, 100%); }
@@ -225,6 +234,7 @@ export class DeliverablesCatalogPageComponent {
   readonly deliverables = signal<Deliverable[]>([]);
   readonly searchTerm = signal('');
   readonly showModal = signal(false);
+  readonly editingDeliverableId = signal<string | null>(null);
   readonly discardDraftPrompt = signal(false);
   readonly saving = signal(false);
   readonly hasActiveFilters = computed(() => !!this.searchTerm().trim());
@@ -248,16 +258,26 @@ export class DeliverablesCatalogPageComponent {
   }
 
   openModal() {
-    this.form.reset({ contractId: '', name: '', description: '' });
+    this.discardDraftPrompt.set(false);
+    this.resetForm();
+    this.showModal.set(true);
+  }
+
+  editDeliverable(deliverable: Deliverable) {
+    this.editingDeliverableId.set(deliverable.id);
+    this.form.reset({
+      contractId: deliverable.contractId,
+      name: deliverable.name,
+      description: deliverable.description
+    });
     this.form.markAsPristine();
     this.discardDraftPrompt.set(false);
     this.showModal.set(true);
   }
 
   closeModal() {
-    this.form.reset({ contractId: '', name: '', description: '' });
-    this.form.markAsPristine();
     this.discardDraftPrompt.set(false);
+    this.resetForm();
     this.showModal.set(false);
   }
 
@@ -292,10 +312,16 @@ export class DeliverablesCatalogPageComponent {
       return;
     }
 
+    const deliverableId = this.editingDeliverableId();
+    const payload = this.form.getRawValue();
+    const action = deliverableId
+      ? this.api.updateDeliverable(deliverableId, payload)
+      : this.api.createDeliverable(payload);
+
     this.saving.set(true);
-    this.api.createDeliverable(this.form.getRawValue()).subscribe({
+    action.subscribe({
       next: () => {
-        this.feedback.success('Entregable creado.');
+        this.feedback.success(deliverableId ? 'Entregable actualizado.' : 'Entregable creado.');
         this.closeModal();
         this.reload();
       },
@@ -322,5 +348,11 @@ export class DeliverablesCatalogPageComponent {
       next: data => this.deliverables.set(data),
       error: () => this.feedback.error('No fue posible cargar los entregables.')
     });
+  }
+
+  private resetForm() {
+    this.editingDeliverableId.set(null);
+    this.form.reset({ contractId: '', name: '', description: '' });
+    this.form.markAsPristine();
   }
 }

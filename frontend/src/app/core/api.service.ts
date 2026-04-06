@@ -59,6 +59,10 @@ export class ApiService {
     return this.http.post<Deliverable>(`${this.auth.apiBaseUrl}/api/deliverables`, payload);
   }
 
+  updateDeliverable(id: string, payload: unknown) {
+    return this.http.put<Deliverable>(`${this.auth.apiBaseUrl}/api/deliverables/${id}`, payload);
+  }
+
   getInvoices(scope: string) {
     const query = scope === 'all' ? '' : `?scope=${scope}`;
     return this.http.get<InvoiceItem[]>(`${this.auth.apiBaseUrl}/api/invoices${query}`);

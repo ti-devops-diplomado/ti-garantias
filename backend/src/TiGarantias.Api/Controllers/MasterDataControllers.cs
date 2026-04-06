@@ -213,4 +213,36 @@ public sealed class DeliverablesController(AppDbContext dbContext, IAuditService
         await auditService.RecordAsync("deliverable", deliverable.Id.ToString(), "create", request, cancellationToken);
         return CreatedAtAction(nameof(GetAll), new { id = deliverable.Id }, deliverable);
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Deliverable>> Update(Guid id, [FromBody] DeliverableRequest request, CancellationToken cancellationToken)
+    {
+        var deliverable = await dbContext.Deliverables
+            .Include(x => x.InvoiceDeliverables)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (deliverable is null)
+        {
+            return NotFound();
+        }
+
+        if (!await dbContext.Contracts.AnyAsync(x => x.Id == request.ContractId, cancellationToken))
+        {
+            return ValidationProblem("El contrato no existe.");
+        }
+
+        if (deliverable.ContractId != request.ContractId && deliverable.InvoiceDeliverables.Count != 0)
+        {
+            return ValidationProblem("No se puede cambiar el contrato de un entregable que ya esta asociado a facturas.");
+        }
+
+        deliverable.ContractId = request.ContractId;
+        deliverable.Name = request.Name.Trim();
+        deliverable.Description = request.Description.Trim();
+        deliverable.DueDate = request.DueDate;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await auditService.RecordAsync("deliverable", deliverable.Id.ToString(), "update", request, cancellationToken);
+        return Ok(deliverable);
+    }
 }
